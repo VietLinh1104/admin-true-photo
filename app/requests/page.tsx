@@ -6,11 +6,9 @@ import RequestList from '../components/RequestList';
 import { 
   Breadcrumb, 
   BreadcrumbItem,
-  Button,
   ContentSwitcher,
   Switch,
 } from '@carbon/react';
-import { Add } from '@carbon/icons-react';
 
 // Example data - replace with actual API call
 const mockRequests = [

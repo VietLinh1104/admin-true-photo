@@ -1,11 +1,52 @@
 // File: components/MultipartFileUploader.tsx
 import React from "react";
-import Uppy, { type UploadResult } from "@uppy/core";
+import Uppy, { type UploadResult, UppyFile } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
-import AwsS3Multipart from "@uppy/aws-s3-multipart";
+import AwsS3Multipart, { AwsS3Part } from "@uppy/aws-s3-multipart";
 import { create } from "@/lib/strapiClient";
 
-const fetchUploadApiEndpoint = async (endpoint: string, data: any) => {
+interface UploadApiRequest {
+  file?: { name: string };
+  contentType?: string;
+  key?: string;
+  uploadId?: string;
+  partNumber?: number;
+  parts?: AwsS3Part[];
+}
+
+interface ExtendedUppyFile extends UppyFile {
+  uploadId?: string;
+  response?: {
+    body: {
+      Key?: string;
+      Bucket?: string;
+      VersionId?: string;
+      ETag?: string;
+      ChecksumCRC32?: string;
+    };
+    status: number;
+    uploadURL: string;
+  };
+  uploadURL?: string;
+}
+
+interface StorageBucketData {
+  data: {
+    fileName: string;
+    key: string;
+    bucket: string;
+    uploadId: string;
+    versionId: string;
+    etag: string;
+    checksumCRC32: string;
+    url: string;
+    size: number;
+    mimeType: string;
+    statusUpload: "completed" | "pending" | "failed";
+  };
+}
+
+const fetchUploadApiEndpoint = async (endpoint: string, data: UploadApiRequest) => {
   const res = await fetch(`/api/multipart-upload/${endpoint}`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -23,7 +64,7 @@ const fetchUploadApiEndpoint = async (endpoint: string, data: any) => {
   return res.json();
 };
 
-const createStorageBucket = async (data: any) => {
+const createStorageBucket = async (data: StorageBucketData) => {
   try {
     const response = await create('storage-buckets', data.data);
     return response;
@@ -79,20 +120,24 @@ export function MultipartFileUploader({
   React.useEffect(() => {
     uppy.on("complete", async (result) => {
       try {
-        const uploadedFile = result.successful[0];
+        const uploadedFile = result.successful[0] as ExtendedUppyFile;
         
-        const strapiData = {
+        if (!uploadedFile.response?.body?.Key || !uploadedFile.response.body.Bucket) {
+          throw new Error('Missing required file data');
+        }
+        
+        const strapiData: StorageBucketData = {
           data: {
             fileName: uploadedFile.name,
-            key: uploadedFile.response?.body?.Key || '',
-            bucket: uploadedFile.response?.body?.Bucket || '',
-            uploadId: (uploadedFile as any).uploadId || '',
-            versionId: uploadedFile.response?.body?.VersionId || '',
-            etag: ((uploadedFile.response?.body?.ETag as string) || '').replace(/"/g, ''),
-            checksumCRC32: uploadedFile.response?.body?.ChecksumCRC32 || '',
-            url: uploadedFile.uploadURL || '',
+            key: uploadedFile.response.body.Key,
+            bucket: uploadedFile.response.body.Bucket,
+            uploadId: uploadedFile.uploadId ?? '',
+            versionId: uploadedFile.response.body.VersionId ?? '',
+            etag: (uploadedFile.response.body.ETag ?? '').replace(/"/g, ''),
+            checksumCRC32: uploadedFile.response.body.ChecksumCRC32 ?? '',
+            url: uploadedFile.uploadURL ?? '',
             size: uploadedFile.size,
-            mimeType: uploadedFile.type,
+            mimeType: uploadedFile.type ?? 'application/octet-stream',
             statusUpload: "completed"
           }
         };
@@ -127,6 +172,5 @@ export function MultipartFileUploader({
     showLinkToFileUploadResult={true} 
     theme="dark"
     className="!border-none shadow-none"
-
   />;
 }

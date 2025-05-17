@@ -9,8 +9,6 @@ import {
 } from '@carbon/react';
 import { UploadResult } from '@uppy/core';
 
-const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_KEY_ID, R2_BUCKET_NAME } =
-  process.env;
 
 export default function UploadPage() {
   const handleUploadSuccess = (result: UploadResult) => {

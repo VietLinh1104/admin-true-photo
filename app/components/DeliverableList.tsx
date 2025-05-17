@@ -19,7 +19,6 @@ import {
   Document,
   Image as ImageIcon,
   Pdf,
-  Edit,
 } from '@carbon/icons-react';
 
 interface RequestCustomer {
@@ -81,7 +80,6 @@ const formatDate = (dateString: string) => {
 
 const DeliverableList: React.FC<DeliverableListProps> = ({
   deliverables,
-  loading = false,
   page,
   totalItems,
   onPageChange,
@@ -133,15 +131,12 @@ const DeliverableList: React.FC<DeliverableListProps> = ({
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-                {headers.map(header => {
-                  const { key, ...headerProps } = getHeaderProps({ header });
-                  return (
-                    <TableHeader key={header.key} {...headerProps}>
-                      {header.header}
-                    </TableHeader>
-                  );
-                })}
-                <TableHeader>Actions</TableHeader>
+                {headers.map((header, index) => (
+                  <TableHeader {...getHeaderProps({ header })} key={`header-${index}`}>
+                    {header.header}
+                  </TableHeader>
+                ))}
+                <TableHeader key="actions">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>

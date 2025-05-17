@@ -10,7 +10,6 @@ import {
   Button 
 } from '@carbon/react';
 import { Upload } from '@carbon/icons-react';
-import Link from 'next/link';
 import { getAll } from '@/lib/strapiClient';
 
 export default function DocumentPage() {

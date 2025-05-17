@@ -13,7 +13,7 @@ import {
   Loading,
   Stack
 } from '@carbon/react';
-import { UploadResult } from '@uppy/core';
+import { UploadResult, UppyFile } from '@uppy/core';
 import { getOne, update } from '@/lib/strapiClient';
 
 interface DeliverableFormData {
@@ -21,6 +21,16 @@ interface DeliverableFormData {
   customerEmail: string;
   fileDescription: string;
   notes: string;
+}
+
+interface ExtendedUppyFile extends UppyFile {
+  uploadId?: string;
+  response?: {
+    body: Record<string, unknown>;
+    status: number;
+    uploadURL: string;
+  };
+  uploadURL?: string;
 }
 
 export default function EditDeliverablePage({ params }: { params: Promise<{ documentId: string }> }) {
@@ -58,13 +68,13 @@ export default function EditDeliverablePage({ params }: { params: Promise<{ docu
     console.log('Upload successful:', result);
     // Update the storage bucket reference in the deliverable
     try {
-      const uploadedFile = result.successful[0];
+      const uploadedFile = result.successful[0] as ExtendedUppyFile;
       await update('deliverables-documents', resolvedParams.documentId, {
         storage_bucket: {
           fileName: uploadedFile.name,
           key: uploadedFile.response?.body?.Key || '',
           bucket: uploadedFile.response?.body?.Bucket || '',
-          uploadId: (uploadedFile as any).uploadId || '',
+          uploadId: uploadedFile.uploadId || '',
           versionId: uploadedFile.response?.body?.VersionId || '',
           etag: ((uploadedFile.response?.body?.ETag as string) || '').replace(/"/g, ''),
           checksumCRC32: uploadedFile.response?.body?.ChecksumCRC32 || '',

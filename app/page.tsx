@@ -17,9 +17,7 @@ import {
   UserMultiple,
   Image,
   Report,
-  Growth,
   DocumentImport,
-  Time,
 } from '@carbon/icons-react';
 
 export default function Home() {

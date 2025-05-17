@@ -10,10 +10,8 @@ import {
 } from '@carbon/react';
 import {
   Dashboard,
-  UserMultiple,
   Document,
   Settings,
-  Report,
   Category,
 } from '@carbon/icons-react';
 

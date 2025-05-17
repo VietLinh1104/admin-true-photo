@@ -2,13 +2,43 @@ import React from "react";
 import Uppy, { type UploadResult, UppyFile } from "@uppy/core";
 import AwsS3, { type AwsS3UploadParameters } from "@uppy/aws-s3";
 import { Dashboard } from "@uppy/react";
-import { sha256 } from "crypto-hash";
 
 // Uppy styles
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
 
-const createStorageBucket = async (data: any) => {
+interface StorageBucketData {
+  data: {
+    fileName: string;
+    key: string;
+    bucket: string;
+    uploadId: string;
+    versionId: string;
+    etag: string;
+    checksumCRC32: string;
+    url: string;
+    size: number;
+    mimeType: string;
+    statusUpload: "completed" | "pending" | "failed";
+  };
+}
+
+interface S3MultipartData {
+  key?: string;
+  uploadId?: string;
+}
+
+interface ExtendedUppyFile extends UppyFile {
+  s3Multipart?: S3MultipartData;
+  response?: {
+    body: Record<string, unknown>;
+    status: number;
+    uploadURL: string;
+  };
+  uploadURL?: string;
+}
+
+const createStorageBucket = async (data: StorageBucketData): Promise<unknown> => {
   try {
     const response = await fetch('http://localhost:1337/api/storage-buckets', {
       method: 'POST',
@@ -24,7 +54,7 @@ const createStorageBucket = async (data: any) => {
   }
 };
 
-export async function getUploadParameters(file: UppyFile) {
+export async function getUploadParameters(file: UppyFile): Promise<AwsS3UploadParameters> {
   const response = await fetch("/api/upload", {
     method: "POST",
     headers: {
@@ -37,56 +67,54 @@ export async function getUploadParameters(file: UppyFile) {
   });
   if (!response.ok) throw new Error("Unsuccessful request");
 
-  // Parse the JSON response.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const data: { url: string; method: "PUT" } = await response.json();
+  const data = await response.json() as { url: string; method: "PUT" };
 
-  // Return an object in the correct shape.
-  const object: AwsS3UploadParameters = {
+  return {
     method: data.method,
     url: data.url,
-    fields: {}, // For presigned PUT uploads, this should be left empty.
-    // Provide content type header required by S3
+    fields: {},
     headers: {
-      "Content-Type": file.type ? file.type : "application/octet-stream",
+      "Content-Type": file.type || "application/octet-stream",
     },
   };
-  return object;
 }
 
 export function FileUploader({
   onUploadSuccess,
 }: {
   onUploadSuccess: (result: UploadResult) => void;
-}) {
+}): React.ReactElement {
   const uppy = React.useMemo(() => {
-    const uppy = new Uppy({
+    return new Uppy({
       autoProceed: true,
       restrictions: {
         maxNumberOfFiles: 3,
       },
     }).use(AwsS3, {
       id: "AwsS3",
-      getUploadParameters: (file: UppyFile) => getUploadParameters(file),
+      getUploadParameters,
     });
-    return uppy;
   }, []);
+
   uppy.on("complete", async (result) => {
     try {
-      const uploadedFile = result.successful[0];
+      const uploadedFile = result.successful[0] as ExtendedUppyFile;
+      if (!uploadedFile.response?.body || !uploadedFile.uploadURL) {
+        throw new Error('Missing required upload data');
+      }
       
-      const strapiData = {
+      const strapiData: StorageBucketData = {
         data: {
           fileName: uploadedFile.name,
-          key: (uploadedFile as any).s3Multipart?.key || '',
-          bucket: uploadedFile.response?.body?.Bucket || '',
-          uploadId: (uploadedFile as any).s3Multipart?.uploadId || '',
-          versionId: uploadedFile.response?.body?.VersionId || '',
-          etag: ((uploadedFile.response?.body?.ETag as string) || '').replace(/"/g, ''),
-          checksumCRC32: uploadedFile.response?.body?.ChecksumCRC32 || '',
-          url: uploadedFile.uploadURL || '',
+          key: uploadedFile.s3Multipart?.key ?? '',
+          bucket: (uploadedFile.response.body.Bucket as string) ?? '',
+          uploadId: uploadedFile.s3Multipart?.uploadId ?? '',
+          versionId: (uploadedFile.response.body.VersionId as string) ?? '',
+          etag: ((uploadedFile.response.body.ETag as string) ?? '').replace(/"/g, ''),
+          checksumCRC32: (uploadedFile.response.body.ChecksumCRC32 as string) ?? '',
+          url: uploadedFile.uploadURL,
           size: uploadedFile.size,
-          mimeType: uploadedFile.type,
+          mimeType: uploadedFile.type ?? 'application/octet-stream',
           statusUpload: "completed"
         }
       };
@@ -97,5 +125,6 @@ export function FileUploader({
       console.error('Error in upload completion:', error);
     }
   });
+
   return <Dashboard uppy={uppy} showLinkToFileUploadResult={true} />;
 }

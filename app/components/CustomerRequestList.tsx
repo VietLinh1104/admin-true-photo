@@ -13,9 +13,8 @@ import {
   Button,
   Tag,
   Pagination,
-  Dropdown,
 } from '@carbon/react';
-import { Document, UserAvatar } from '@carbon/icons-react';
+import { Document } from '@carbon/icons-react';
 
 interface DocumentData {
   id: number;
@@ -44,11 +43,6 @@ interface CustomerRequest {
   assignedTo?: string;
 }
 
-interface AssigneeOption {
-  id: string;
-  text: string;
-}
-
 interface CustomerRequestListProps {
   requests: CustomerRequest[];
   loading?: boolean;
@@ -64,7 +58,6 @@ const formatDate = (dateString: string) => {
 
 const CustomerRequestList: React.FC<CustomerRequestListProps> = ({
   requests,
-  loading = false,
   page,
   totalItems,
   onPageChange,
@@ -115,15 +108,12 @@ const CustomerRequestList: React.FC<CustomerRequestListProps> = ({
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-                {headers.map(header => {
-                  const { key, ...headerProps } = getHeaderProps({ header });
-                  return (
-                    <TableHeader key={header.key} {...headerProps}>
-                      {header.header}
-                    </TableHeader>
-                  );
-                })}
-                <TableHeader>Actions</TableHeader>
+                {headers.map((header, index) => (
+                  <TableHeader {...getHeaderProps({ header })} key={`header-${index}`}>
+                    {header.header}
+                  </TableHeader>
+                ))}
+                <TableHeader key="actions">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>

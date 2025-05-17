@@ -11,10 +11,9 @@ import {
   TableCell,
   Modal,
   Button,
-  Tag,
   Pagination,
 } from '@carbon/react';
-import { Document, UserAvatar } from '@carbon/icons-react';
+import { Document } from '@carbon/icons-react';
 
 interface EmailSubmission {
   id: number;
@@ -41,7 +40,6 @@ const formatDate = (dateString: string) => {
 
 const EmailSubmissionList: React.FC<EmailSubmissionListProps> = ({
   submissions,
-  loading = false,
   page,
   totalItems,
   onPageChange,
@@ -88,15 +86,12 @@ const EmailSubmissionList: React.FC<EmailSubmissionListProps> = ({
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-                {headers.map(header => {
-                  const { key, ...headerProps } = getHeaderProps({ header });
-                  return (
-                    <TableHeader key={header.key} {...headerProps}>
-                      {header.header}
-                    </TableHeader>
-                  );
-                })}
-                <TableHeader>Actions</TableHeader>
+                {headers.map((header, index) => (
+                  <TableHeader {...getHeaderProps({ header })} key={`header-${index}`}>
+                    {header.header}
+                  </TableHeader>
+                ))}
+                <TableHeader key="actions">Actions</TableHeader>
               </TableRow>
             </TableHead>
             <TableBody>

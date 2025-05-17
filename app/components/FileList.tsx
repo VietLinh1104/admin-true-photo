@@ -65,7 +65,6 @@ const formatDate = (dateString: string) => {
 
 const FileList: React.FC<FileListProps> = ({ 
   files, 
-  loading = false,
   page,
   totalItems,
   onPageChange,
@@ -115,14 +114,15 @@ const FileList: React.FC<FileListProps> = ({
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-                {headers.map(header => {
-                  const { key, ...headerProps } = getHeaderProps({ header });
-                  return (
-                    <TableHeader key={header.key} {...headerProps}>
-                      {header.header}
-                    </TableHeader>
-                  );
-                })}
+              // eslint-disable-next-line react/jsx-key
+              {headers.map(header => {
+                const headerProps = getHeaderProps({ header, id: header.key });
+                return (
+                  <TableHeader {...headerProps}>
+                    {header.header}
+                  </TableHeader>
+                );
+              })}
                 <TableHeader>Actions</TableHeader>
               </TableRow>
             </TableHead>
@@ -134,7 +134,7 @@ const FileList: React.FC<FileListProps> = ({
                   className="cursor-pointer hover:bg-gray-800/10 transition-colors"
                 >
                   {row.cells.map(cell => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={`${row.id}-${cell.id}`}>
                       {cell.id.includes('statusUpload') ? (
                         <span className={`px-2 py-1 rounded-full text-sm ${
                           cell.value === 'completed' 

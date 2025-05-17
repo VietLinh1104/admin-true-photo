@@ -12,14 +12,12 @@ import {
   Modal,
   Button,
   Tag,
-  ModalFooter,
 } from '@carbon/react';
 import {
   Download,
   Document,
   Image as ImageIcon,
   Pdf,
-  UserFollow,
 } from '@carbon/icons-react';
 import { formatDate } from '../utils/dateUtils';
 
@@ -110,8 +108,9 @@ const RequestList: React.FC<RequestListProps> = ({ requests }) => {
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-                {headers.map(header => (
-                  <TableHeader {...getHeaderProps({ header })}>
+              // eslint-disable-next-line react/jsx-key
+                {headers.map((header) => (
+                  <TableHeader {...getHeaderProps({ header, id: header.key })}>
                     {header.header}
                   </TableHeader>
                 ))}
