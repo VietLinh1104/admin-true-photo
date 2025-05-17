@@ -108,8 +108,8 @@ const RequestList: React.FC<RequestListProps> = ({ requests }) => {
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-              // eslint-disable-next-line react/jsx-key
                 {headers.map((header) => (
+              // eslint-disable-next-line react/jsx-key
                   <TableHeader {...getHeaderProps({ header, id: header.key })}>
                     {header.header}
                   </TableHeader>

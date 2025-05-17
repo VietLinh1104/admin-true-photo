@@ -114,10 +114,10 @@ const FileList: React.FC<FileListProps> = ({
           <Table {...getTableProps()} size="lg" useZebraStyles>
             <TableHead>
               <TableRow>
-              // eslint-disable-next-line react/jsx-key
               {headers.map(header => {
                 const headerProps = getHeaderProps({ header, id: header.key });
                 return (
+                  // eslint-disable-next-line react/jsx-key
                   <TableHeader {...headerProps}>
                     {header.header}
                   </TableHeader>
