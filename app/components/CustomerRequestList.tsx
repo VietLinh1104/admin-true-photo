@@ -39,7 +39,7 @@ interface CustomerRequest {
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
-  document: DocumentData;
+  document?: DocumentData;
   assignedTo?: string;
 }
 
@@ -82,7 +82,7 @@ const CustomerRequestList: React.FC<CustomerRequestListProps> = ({
     phoneNumber: request.phoneNumber,
     requestStatus: request.requestStatus,
     createdAt: formatDate(request.createdAt),
-    document: request.document.fileName,
+    document: request.document?.fileName || 'No document',
   }));
 
   const handleRowClick = (rowId: string) => {
@@ -248,25 +248,31 @@ const CustomerRequestList: React.FC<CustomerRequestListProps> = ({
 
             <div className="border border-gray-700 p-4 bg-[var(--cds-layer-01)]">
               <p className="font-semibold mb-3">Attached Document:</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Document size={32} />
-                  <div>
-                    <p className="font-medium">{selectedRequest.document.fileName}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <Tag type="blue">{selectedRequest.document.mimeType}</Tag>
+              {selectedRequest.document ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Document size={32} />
+                    <div>
+                      <p className="font-medium">{selectedRequest.document.fileName}</p>
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Tag type="blue">{selectedRequest.document.mimeType}</Tag>
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    kind="ghost"
+                    renderIcon={Document}
+                    iconDescription="View Document"
+                    onClick={() => selectedRequest.document?.url && window.open(selectedRequest.document.url, '_blank')}
+                  >
+                    View Document
+                  </Button>
                 </div>
-                <Button
-                  kind="ghost"
-                  renderIcon={Document}
-                  iconDescription="View Document"
-                  onClick={() => window.open(selectedRequest.document.url, '_blank')}
-                >
-                  View Document
-                </Button>
-              </div>
+              ) : (
+                <div className="text-gray-500 italic">
+                  No document attached to this request
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-4 text-sm text-gray-500">
