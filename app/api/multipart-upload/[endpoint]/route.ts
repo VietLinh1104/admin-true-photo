@@ -7,6 +7,7 @@ import {
   CreateMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -37,9 +38,11 @@ export async function POST(
       case 'create-multipart-upload': {
         const { file, contentType } = body;
         const filename = file.name;
+        const timestamp = Date.now();
+        const uniqueKey = `resources/${timestamp}-${filename}`;
         const cmd = new CreateMultipartUploadCommand({
           Bucket: BUCKET,
-          Key: `resources/${filename}`,
+          Key: uniqueKey,
           ContentType: contentType,
         });
         const resp = await R2.send(cmd);
@@ -90,11 +93,30 @@ export async function POST(
         return NextResponse.json({ url });
       }
 
+      case 'delete-file': { // ✅ Thêm case mới
+        const { key } = body;
+        const cmd = new DeleteObjectCommand({
+          Bucket: BUCKET,
+          Key: key,
+        });
+        await R2.send(cmd);
+        return NextResponse.json({ message: 'File deleted successfully', key });
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Endpoint not found' }), { status: 404 });
     }
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+  } catch (err: any) {
+    console.error('Detailed error:', {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status,
+      stack: err.stack
+    });
+    return new Response(JSON.stringify({ 
+      error: 'Internal Server Error',
+      details: err.message,
+      response: err.response?.data 
+    }), { status: 500 });
   }
 }

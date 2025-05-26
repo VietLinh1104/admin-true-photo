@@ -1,9 +1,13 @@
 // File: components/MultipartFileUploader.tsx
 import React from "react";
-import Uppy, { type UploadResult, UppyFile } from "@uppy/core";
+import Uppy, { type UploadResult, UppyFile, SuccessResponse } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import AwsS3Multipart, { AwsS3Part } from "@uppy/aws-s3-multipart";
 import { create } from "@/lib/strapiClient";
+
+// Import Uppy styles
+import '@uppy/core/dist/style.min.css';
+import '@uppy/dashboard/dist/style.min.css';
 
 interface UploadApiRequest {
   file?: { name: string };
@@ -35,15 +39,19 @@ interface StorageBucketData {
     fileName: string;
     key: string;
     bucket: string;
-    uploadId: string;
-    versionId: string;
-    etag: string;
-    checksumCRC32: string;
+    uploadId: string | null;
+    versionId: string | null;
+    etag: string | null;
+    checksumCRC32: string | null;
     url: string;
     size: number;
     mimeType: string;
     statusUpload: "completed" | "pending" | "failed";
   };
+}
+
+export interface ExtendedUploadResult extends UploadResult {
+  documentId?: string;
 }
 
 const fetchUploadApiEndpoint = async (endpoint: string, data: UploadApiRequest) => {
@@ -66,23 +74,49 @@ const fetchUploadApiEndpoint = async (endpoint: string, data: UploadApiRequest) 
 
 const createStorageBucket = async (data: StorageBucketData) => {
   try {
-    const response = await create('storage-buckets', data.data);
+    // Format data according to Strapi's expected structure
+    const strapiData = {
+      data: {
+        fileName: data.data.fileName,
+        key: data.data.key,
+        bucket: data.data.bucket,
+        uploadId: data.data.uploadId,
+        versionId: data.data.versionId,
+        etag: data.data.etag,
+        checksumCRC32: data.data.checksumCRC32,
+        url: data.data.url,
+        size: data.data.size,
+        mimeType: data.data.mimeType,
+        statusUpload: data.data.statusUpload
+      }
+    };
+    console.log('Sending data to Strapi:', strapiData);
+    const response = await create('storage-buckets', strapiData);
+    console.log('Strapi response:', response);
     return response;
   } catch (error) {
     console.error('Error saving to Strapi:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      if ('response' in error) {
+        console.error('Strapi error response:', (error as any).response?.data);
+      }
+    }
     throw error;
   }
 };
 
 export function MultipartFileUploader({
   onUploadSuccess,
+  theme = "dark",
 }: {
   onUploadSuccess: (result: UploadResult) => void;
+  theme?: "light" | "dark";
 }) {
-  const uppy = React.useMemo(() => {
-    const uppy = new Uppy({
-      autoProceed: true,
-    }).use(AwsS3Multipart, {
+  const uppyRef = React.useRef<Uppy | null>(null);
+
+  if (!uppyRef.current) {
+    uppyRef.current = new Uppy({ autoProceed: true }).use(AwsS3Multipart, {
       createMultipartUpload: async (file) => {
         const contentType = file.type;
         return fetchUploadApiEndpoint("create-multipart-upload", {
@@ -113,64 +147,78 @@ export function MultipartFileUploader({
           uploadId: props.uploadId,
         }),
     });
+  }
 
-    return uppy;
-  }, []);
+  const uppy = uppyRef.current;
 
   React.useEffect(() => {
-    uppy.on("complete", async (result) => {
+    const onComplete = async (result: UploadResult) => {
       try {
         const uploadedFile = result.successful[0] as ExtendedUppyFile;
-        
         if (!uploadedFile.response?.body?.Key || !uploadedFile.response.body.Bucket) {
-          throw new Error('Missing required file data');
+          throw new Error('MultipartFileUploader.tsx Missing required file data');
         }
-        
+
         const strapiData: StorageBucketData = {
           data: {
             fileName: uploadedFile.name,
             key: uploadedFile.response.body.Key,
             bucket: uploadedFile.response.body.Bucket,
-            uploadId: uploadedFile.uploadId ?? '',
-            versionId: uploadedFile.response.body.VersionId ?? '',
-            etag: (uploadedFile.response.body.ETag ?? '').replace(/"/g, ''),
-            checksumCRC32: uploadedFile.response.body.ChecksumCRC32 ?? '',
-            url: uploadedFile.uploadURL ?? '',
+            uploadId: uploadedFile.uploadId || null,
+            versionId: uploadedFile.response.body.VersionId || null,
+            etag: (uploadedFile.response.body.ETag || '').replace(/"/g, '') || null,
+            checksumCRC32: uploadedFile.response.body.ChecksumCRC32 || null,
+            url: uploadedFile.uploadURL || '',
             size: uploadedFile.size,
-            mimeType: uploadedFile.type ?? 'application/octet-stream',
+            mimeType: uploadedFile.type || 'application/octet-stream',
             statusUpload: "completed"
           }
         };
 
-        await createStorageBucket(strapiData);
-        console.log('Saved to Strapi:', strapiData);
-        onUploadSuccess(result);
+        const response = await createStorageBucket(strapiData);
+        console.log('MultipartFileUploader.tsx Successfully saved to Strapi:', response);
+        if (response?.documentId) {
+          onUploadSuccess({ ...result, documentId: response.documentId } as ExtendedUploadResult);
+        } else {
+          console.error('MultipartFileUploader.tsx Missing documentId in response:', response);
+          onUploadSuccess(result);
+        }
       } catch (error) {
-        console.error('Error in upload completion:', error);
+        console.error('MultipartFileUploader.tsx Error in upload completion:', error);
       }
-    });
+    };
 
-    uppy.on("upload-success", (file, response) => {
+    const onUploadSuccessHandler = (file: UppyFile | undefined, response: SuccessResponse) => {
       if (!file) return;
-    
       const key = response.body?.Key;
       const publicBaseURL = "https://document.truediting.com";
       const publicURL = `${publicBaseURL}/${key}`;
-    
+
+      console.log('MultipartFileUploader.tsx R2 Upload Response:', response);
+
       uppy.setFileState(file.id, {
         ...uppy.getState().files[file.id],
         uploadURL: publicURL,
         response,
       });
-    });
-    
-    return () => uppy.close();
-  }, [uppy, onUploadSuccess]);
+    };
 
-  return <Dashboard 
-    uppy={uppy} 
-    showLinkToFileUploadResult={true} 
-    theme="dark"
-    className="!border-none shadow-none"
-  />;
+    uppy.on("complete", onComplete);
+    uppy.on("upload-success", onUploadSuccessHandler);
+
+    return () => {
+      uppy.off("complete", onComplete);
+      uppy.off("upload-success", onUploadSuccessHandler);
+    };
+  }, [onUploadSuccess, uppy]);
+
+  return (
+    <Dashboard
+      uppy={uppy}
+      showLinkToFileUploadResult={true}
+      theme={theme}
+      className="!border-none shadow-none"
+    />
+  );
 }
+

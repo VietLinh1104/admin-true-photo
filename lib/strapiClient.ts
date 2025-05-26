@@ -1,62 +1,86 @@
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
-
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 const API_URL = `${STRAPI_URL}/api`;
 
-const headers = {
-  'Content-Type': 'application/json',
-  // Authorization: `Bearer ${token}`, // Nếu có auth token
+// Kiểm tra response
+const checkResponse = async (res: Response) => {
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`API error: ${res.status} - ${error}`);
+  }
+  return res.json();
 };
 
-// Lấy toàn bộ bản ghi
+// GET toàn bộ bản ghi
 export const getAll = async (collection: string, populate = '*') => {
+  console.log(`strapiClient.tsx GET Request to: ${API_URL}/${collection}`);
   const res = await fetch(`${API_URL}/${collection}?populate=${populate}`, {
     method: 'GET',
-    headers,
     cache: 'no-store',
   });
   const data = await res.json();
   return data.data;
 };
 
-// Lấy một bản ghi theo ID
+// GET bản ghi theo ID
 export const getOne = async (collection: string, id: number | string, populate = '*') => {
+  console.log(`strapiClient.tsx GET Request to: ${API_URL}/${collection}/${id}`);
   const res = await fetch(`${API_URL}/${collection}/${id}?populate=${populate}`, {
     method: 'GET',
-    headers,
     cache: 'no-store',
   });
   const data = await res.json();
   return data.data;
 };
 
-// Tạo bản ghi mới
+// POST tạo bản ghi
 export const create = async (collection: string, payload: object) => {
-  const res = await fetch(`${API_URL}/${collection}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ data: payload }),
-  });
-  const data = await res.json();
-  return data.data;
+  try {
+    console.log(`strapiClient.tsx POST Request to: ${API_URL}/${collection}`);
+    
+    const res = await fetch(`${API_URL}/${collection}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await checkResponse(res);
+    return data.data;
+  } catch (error) {
+    console.error('strapiClient.tsx Error in create request:', error);
+    throw error;
+  }
 };
 
-// Cập nhật bản ghi
+// PUT cập nhật bản ghi
 export const update = async (collection: string, id: number | string, payload: object) => {
+  console.log(`strapiClient.tsx PUT Request to: ${API_URL}/${collection}/${id}`);
   const res = await fetch(`${API_URL}/${collection}/${id}`, {
     method: 'PUT',
-    headers,
     body: JSON.stringify({ data: payload }),
   });
   const data = await res.json();
   return data.data;
 };
 
-// Xóa bản ghi
+// DELETE xóa bản ghi
 export const remove = async (collection: string, id: number | string) => {
+  console.log(`strapiClient.tsx DELETE Request to: ${API_URL}/${collection}/${id}`);
   const res = await fetch(`${API_URL}/${collection}/${id}`, {
     method: 'DELETE',
-    headers,
   });
   const data = await res.json();
   return data.data;
+};
+
+// Đăng nhập (admin)
+export const login = async (email: string, password: string) => {
+  console.log(`strapiClient.tsx POST Request to: ${STRAPI_URL}/admin/login`);
+  const res = await fetch(`${STRAPI_URL}/admin/login`, {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  return data;
 };

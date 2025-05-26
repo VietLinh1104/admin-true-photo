@@ -10,30 +10,50 @@ import {
   Checkbox,
 } from '@carbon/react';
 import { Login as LoginIcon } from '@carbon/icons-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { login } from '@/lib/strapiClient';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from') || '/requests';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage('');
 
     try {
-      // TODO: Implement actual login logic here
-      console.log('Login attempt with:', { email, password, rememberMe });
+      const response = await login(email, password);
+      console.log('Full login response:', response);
+      console.log('Response data:', response.data);
+      console.log('Response error:', response.error);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirect to dashboard on success
-      router.push('/requests');
+      if (response.data?.token) {
+        // Choose storage based on remember me preference
+        const storage = rememberMe ? localStorage : sessionStorage;
+        
+        // Store the token
+        storage.setItem('token', response.data.token);
+        // Store user data
+        storage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Set a cookie to indicate token presence (for middleware)
+        document.cookie = 'hasToken=true; path=/';
+        
+        // Redirect to the original requested page or dashboard
+        router.push(from);
+      } else {
+        setErrorMessage(response.error?.message || 'Login failed');
+      }
     } catch (error) {
       console.error('Login failed:', error);
+      setErrorMessage('An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -46,6 +66,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold mb-2">True Photo Admin</h1>
           <p className="text-gray-400">Sign in to your account</p>
         </div>
+
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {errorMessage}
+          </div>
+        )}
 
         <Form onSubmit={handleSubmit} className="login-form">
           <Stack gap={7}>
