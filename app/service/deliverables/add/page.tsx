@@ -11,7 +11,6 @@ import {
   TextArea,
   Button,
   Loading,
-  Stack,
   Select,
   SelectItem,
   ToastNotification
@@ -66,7 +65,7 @@ export default function AddDeliverablePage() {
     fetchData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -152,7 +151,7 @@ export default function AddDeliverablePage() {
                 name="request_customer"
                 labelText="Client Request"
                 value={formData.request_customer || ''}
-                onChange={(e) => handleInputChange(e as any)}
+                onChange={handleInputChange}
               >
                 <SelectItem value="" text="Select a client request" />
                 {clientRequests.map((request) => (
