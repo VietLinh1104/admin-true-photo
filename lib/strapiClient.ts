@@ -79,6 +79,9 @@ export const login = async (email: string, password: string) => {
   console.log(`strapiClient.tsx POST Request to: ${STRAPI_URL}/admin/login`);
   const res = await fetch(`${STRAPI_URL}/admin/login`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
