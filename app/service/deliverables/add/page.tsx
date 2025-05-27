@@ -34,7 +34,7 @@ interface ClientRequest {
 }
 
 export default function AddDeliverablePage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
   const [documentId, setDocumentId] = useState<string | null>(null);
@@ -48,22 +48,22 @@ export default function AddDeliverablePage() {
     request_customer: null,
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch client requests
-        const requestsResponse = await fetch('/api/client-requests');
-        const requestsData = await requestsResponse.json();
-        setClientRequests(requestsData.data || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       // Fetch client requests
+  //       const requestsResponse = await fetch('/api/client-requests');
+  //       const requestsData = await requestsResponse.json();
+  //       setClientRequests(requestsData.data || []);
+  //     } catch (error) {
+  //       console.error('Error fetching data:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchData();
-  }, []);
+  //   fetchData();
+  // }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -78,16 +78,14 @@ export default function AddDeliverablePage() {
     setSaving(true);
     try {
       const submitData = {
-        data: {
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          fileDescription: formData.fileDescription,
-          notes: formData.notes,
-          storage_bucket: documentId ? {
-            connect: {documentId: documentId}
-          } : null,
-          publishedAt: new Date().toISOString()
-        }
+        customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
+        fileDescription: formData.fileDescription,
+        notes: formData.notes,
+        storage_bucket: documentId ? {
+          connect: {documentId: documentId}
+        } : null,
+        publishedAt: new Date().toISOString()
       };
       console.log('Submitting data:', submitData);
       const response = await create('deliverables-documents', submitData);

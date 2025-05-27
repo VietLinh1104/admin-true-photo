@@ -81,19 +81,17 @@ const isErrorWithResponse = (
 const createStorageBucket = async (data: StorageBucketData) => {
   try {
     const strapiData = {
-      data: {
-        fileName: data.data.fileName,
-        key: data.data.key,
-        bucket: data.data.bucket,
-        uploadId: data.data.uploadId,
-        versionId: data.data.versionId,
-        etag: data.data.etag,
-        checksumCRC32: data.data.checksumCRC32,
-        url: data.data.url,
-        size: data.data.size,
-        mimeType: data.data.mimeType,
-        statusUpload: data.data.statusUpload,
-      },
+      fileName: data.data.fileName,
+      key: data.data.key,
+      bucket: data.data.bucket,
+      uploadId: data.data.uploadId,
+      versionId: data.data.versionId,
+      etag: data.data.etag,
+      checksumCRC32: data.data.checksumCRC32,
+      url: data.data.url,
+      size: data.data.size,
+      mimeType: data.data.mimeType,
+      statusUpload: data.data.statusUpload,
     };
 
     console.log("Sending data to Strapi:", strapiData);
