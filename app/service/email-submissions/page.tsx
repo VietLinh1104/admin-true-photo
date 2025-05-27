@@ -27,11 +27,12 @@ export default function EmailSubmissionsPage() {
     setLoading(true);
     try {
       const data = await getAll('client-email-submissions');
-      console.log(data);
-      setSubmissions(data);
-      setTotalItems(data.length);
+      setSubmissions(data || []);
+      setTotalItems(data?.length || 0);
     } catch (error) {
       console.error('Lỗi khi fetch dữ liệu:', error);
+      setSubmissions([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
