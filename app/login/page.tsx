@@ -14,7 +14,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { login } from '@/lib/strapiClient';
 
 function LoginContent() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -29,19 +29,16 @@ function LoginContent() {
     setErrorMessage('');
 
     try {
-      const response = await login(email, password);
-      console.log('Full login response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response error:', response.error);
+      const response = await login(identifier, password);
       
-      if (response.data?.token) {
+      if (response.jwt && response.user) {
         // Choose storage based on remember me preference
         const storage = rememberMe ? localStorage : sessionStorage;
         
-        // Store the token
-        storage.setItem('token', response.data.token);
+        // Store the JWT token
+        storage.setItem('token', response.jwt);
         // Store user data
-        storage.setItem('user', JSON.stringify(response.data.user));
+        storage.setItem('user', JSON.stringify(response.user));
         
         // Set a cookie to indicate token presence (for middleware)
         document.cookie = 'hasToken=true; path=/';
@@ -49,7 +46,7 @@ function LoginContent() {
         // Redirect to the original requested page or dashboard
         router.push(from);
       } else {
-        setErrorMessage(response.error?.message || 'Login failed');
+        setErrorMessage('Invalid login response');
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -76,11 +73,11 @@ function LoginContent() {
         <Form onSubmit={handleSubmit} className="login-form">
           <Stack gap={7}>
             <TextInput
-              id="email"
-              labelText="Email"
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              id="identifier"
+              labelText="Identifier"
+              type="text"
+              value={identifier}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
               required
             />
 
@@ -112,7 +109,6 @@ function LoginContent() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
-
           </p>
         </div>
       </div>
