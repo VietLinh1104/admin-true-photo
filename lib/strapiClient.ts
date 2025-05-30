@@ -53,7 +53,9 @@ export const getOne = async (collection: string, id: number | string, populate =
 // POST tạo bản ghi
 export const create = async (collection: string, payload: object) => {
   try {
-    console.log(`POST Request to: ${API_URL}/${collection}`);
+    console.log(`strapiClient.tsx POST Request to: ${API_URL}/${collection}`);
+    console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+
     const res = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
       headers: getAuthHeaders(),
