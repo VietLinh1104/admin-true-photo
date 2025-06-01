@@ -34,6 +34,7 @@ interface ClientRequest {
 }
 
 export default function AddDeliverablePage() {
+  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
@@ -48,22 +49,23 @@ export default function AddDeliverablePage() {
     request_customer: null,
   });
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       // Fetch client requests
-  //       const requestsResponse = await fetch('/api/client-requests');
-  //       const requestsData = await requestsResponse.json();
-  //       setClientRequests(requestsData.data || []);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch client requests
+        const requestsResponse = await fetch('/api/client-requests');
+        const requestsData = await requestsResponse.json();
+        setClientRequests(requestsData.data || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //   fetchData();
-  // }, []);
+    fetchData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

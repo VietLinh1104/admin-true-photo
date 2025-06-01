@@ -27,15 +27,27 @@ const getAuthHeaders = (): HeadersInit => {
 };
 
 // GET toàn bộ bản ghi
-export const getAll = async (collection: string, populate = '*') => {
-  console.log(`GET Request to: ${API_URL}/${collection}`);
-  const res = await fetch(`${API_URL}/${collection}?populate=${populate}`, {
+export const getAll = async (
+  collection: string,
+  populate = '*',
+  page = 1,
+  pageSize = 10,
+  sort?: string
+) => {
+  let url = `${API_URL}/${collection}?populate=${populate}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+  if (sort) {
+    url += `&sort=${encodeURIComponent(sort)}`;
+  }
+  const res = await fetch(url, {
     method: 'GET',
     headers: getAuthHeaders(),
     cache: 'no-store',
   });
   const data = await checkResponse(res);
-  return data.data;
+  return {
+    data: data.data,
+    meta: data.meta
+  };
 };
 
 // GET bản ghi theo ID

@@ -17,7 +17,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         <div className="dashboard-content">
           <Sidebar />
-          <main className="main-content pt-20">
+          <main className="main-content pt-20 !bg-[#262626]">
             {children}
           </main>
         </div>

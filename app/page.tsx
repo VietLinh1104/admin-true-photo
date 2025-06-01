@@ -39,6 +39,7 @@ export default function Home() {
           </Column>
           <Column sm={4} md={4} lg={4}>
             <Tile className="stats-tile">
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <Image size={24} className="stats-icon" />
               <div className="stats-content">
                 <p className="stats-number">5,678</p>

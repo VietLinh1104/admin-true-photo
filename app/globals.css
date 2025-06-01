@@ -177,3 +177,21 @@ body {
 .login-form .cds--stack > * {
   width: 100%;
 }
+
+
+.cds--modal-container {
+  background-color: #161616 !important;
+}
+
+.cds--header {
+  background-color: #161616 !important;
+}
+
+.cds--modal-header {
+  @apply px-5;
+}
+
+.cds--modal-content {
+  @apply px-5;
+}
+
