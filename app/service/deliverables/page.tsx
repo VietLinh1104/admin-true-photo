@@ -15,24 +15,38 @@ import { formatDate, formatSize } from '@/app/utils/dateUtils';
 import MultiStepModal from '@/app/components/MultiStepModal';
 import { useRouter } from 'next/navigation';
 
-interface StorageBucket {
-  id: string;
-  fileName: string;
-  size: number;
-  url: string;
+interface Document {
+  id_document: string;
+  id_request_client: string;
+  id_deliverables_document: string | null;
+  file_name: string;
+  key: string;
+  bucket_name: string;
+  document_url: string;
+  size: string;  // note: API trả size là string
+  mine_type: string;
+  status_upload: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface User {
+  id_user: string;
+  username: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Deliverable {
-  id: string;
-  documentId: string;
-  customerName: string;
-  customerEmail: string;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  fileDescription: string;
-  storage_bucket?: StorageBucket;
-  size?: number;
+  id_deliverables_document: string;
+  customer_name: string;
+  client_email: string;
+  created_at: string;
+  updated_at: string;
+  file_description: string;
+  Documents: Document[];
+  User: User | null;
 }
 
 interface TableCell {
@@ -55,12 +69,11 @@ interface DisplayDeliverable extends Omit<Deliverable, 'size' | 'createdAt' | 'u
 }
 
 const headers = [
-  { key: 'customerName', header: 'Customer Name' },
-  { key: 'customerEmail', header: 'Customer Email' },
-  { key: 'notes', header: 'Notes' },
-  { key: 'createdAt', header: 'Created At' },
-  { key: 'updatedAt', header: 'Updated At' },
-  { key: 'fileDescription', header: 'File Description' },
+  { key: 'customer_name', header: 'Customer Name' },
+  { key: 'client_email', header: 'Customer Email' },
+  { key: 'created_at', header: 'Created At' },
+  { key: 'updated_at', header: 'Updated At' },
+  { key: 'file_description', header: 'File Description' },
 ];
 
 export default function DocumentPage() {
@@ -81,10 +94,20 @@ export default function DocumentPage() {
       try {
         const sortString = sortKey ? `${sortKey}:${sortDirection.toLowerCase()}` : undefined;
         const response = await getAll('deliverables-documents', '*', page, pageSize, sortString);
-        setFiles(response.data);
+        const mappedFiles = response.data.map((item: any) => ({
+          id_deliverables_document: item.id_deliverables_document,
+          customer_name: item.customer_name,
+          client_email: item.client_email,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          file_description: item.file_description,
+          Documents: item.Documents,
+          User: item.User,
+        }));
+        setFiles(mappedFiles);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {
-        console.error('Lỗi khi fetch dữ liệu:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -111,13 +134,13 @@ export default function DocumentPage() {
     return files.map((file) => {
       const displayFile: DisplayDeliverable = {
         ...file,
-        size: formatSize(Number(file.size || 0)),
-        createdAt: formatDate(file.createdAt),
-        updatedAt: formatDate(file.updatedAt),
+        size: formatSize(Number(file.Documents[0]?.size || 0)),
+        createdAt: formatDate(file.created_at),
+        updatedAt: formatDate(file.updated_at),
       };
 
       const tableRow: TableRow = {
-        id: file.id,
+        id: file.id_deliverables_document,
         cells: headers.map(header => {
           const value = file[header.key as keyof Deliverable];
           return {
@@ -169,7 +192,7 @@ export default function DocumentPage() {
             sortDirection={sortDirection}
             onSort={handleSort}
             onRowClick={(row) => {
-              const doc = files.find((f) => f.id === row.id);
+              const doc = files.find((f) => f.id_deliverables_document === row.id);
               if (doc) {
                 setSelectedDoc(doc);
                 setOpenDetail(true);
@@ -185,16 +208,16 @@ export default function DocumentPage() {
           modalHeading="Document Details"
           primaryButtonText="Close"
           secondaryButtonText="Edit"
-          onRequestSecondary={() => selectedDoc && router.push(`/service/deliverables/edit/${selectedDoc.documentId}`)}
+          onRequestSecondary={() => selectedDoc && router.push(`/service/deliverables/edit/${selectedDoc.Documents[0]?.id_document}`)}
           onRequestSubmit={() => setOpenDetail(false)}
           selectedDoc={selectedDoc as unknown as Record<string, string | number | null | undefined>}
           headers={headers}
         >
-          {selectedDoc?.storage_bucket && (
+          {selectedDoc?.Documents[0] && (
             <div style={{ gridColumn: '1 / span 2', marginTop: 8 }}>
               <label style={{ display: 'block', marginBottom: 4, color: '#fff' }}>File</label>
               <ClickableTile
-                href={selectedDoc.storage_bucket.url}
+                href={selectedDoc.Documents[0].document_url}
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex',
@@ -208,8 +231,8 @@ export default function DocumentPage() {
               >
                 <Document size={24} />
                 <div>
-                  <div style={{ fontWeight: 500 }}>{selectedDoc.storage_bucket.fileName}</div>
-                  <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(selectedDoc.storage_bucket.size))}</div>
+                  <div style={{ fontWeight: 500 }}>{selectedDoc.Documents[0].file_name}</div>
+                  <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(selectedDoc.Documents[0].size))}</div>
                 </div>
               </ClickableTile>
             </div>

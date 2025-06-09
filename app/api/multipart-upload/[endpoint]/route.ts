@@ -7,6 +7,7 @@ import {
   CreateMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -88,6 +89,13 @@ export async function POST(
         const cmd = new UploadPartCommand({ Bucket: BUCKET, Key: key, PartNumber: Number(partNumber), UploadId: uploadId });
         const url = await getSignedUrl(R2, cmd, { expiresIn: 3600 });
         return NextResponse.json({ url });
+      }
+
+      case 'delete': {
+        const { key } = body;
+        const cmd = new DeleteObjectCommand({ Bucket: BUCKET, Key: key });
+        const resp = await R2.send(cmd);
+        return NextResponse.json({ success: true, message: 'File deleted successfully', data: resp });
       }
 
       default:

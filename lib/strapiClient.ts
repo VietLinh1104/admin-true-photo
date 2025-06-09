@@ -1,6 +1,6 @@
 // lib/strapiClient.ts
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL;
 const API_URL = `${STRAPI_URL}/api`;
 
 // Hàm kiểm tra phản hồi từ API
@@ -59,7 +59,7 @@ export const getOne = async (collection: string, id: number | string, populate =
     cache: 'no-store',
   });
   const data = await checkResponse(res);
-  return data.data;
+  return data;
 };
 
 // POST tạo bản ghi
@@ -101,18 +101,18 @@ export const remove = async (collection: string, id: number | string) => {
     headers: getAuthHeaders(),
   });
   const data = await checkResponse(res);
-  return data.data;
+  return data;
 };
 
 // Đăng nhập người dùng
-export const login = async (identifier: string, password: string) => {
-  console.log(`POST Request to: ${API_URL}/auth/local`);
-  const res = await fetch(`${API_URL}/auth/local`, {
+export const login = async (username: string, password: string) => {
+  console.log(`POST Request to: ${API_URL}/auth/login`);
+  const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ identifier, password }),
+    body: JSON.stringify({ username, password }),
   });
   const data = await checkResponse(res);
   // Lưu JWT token vào localStorage

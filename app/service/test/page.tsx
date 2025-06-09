@@ -12,24 +12,44 @@ import { Document } from '@carbon/icons-react';
 import { getAll } from '@/lib/strapiClient';
 import { formatDate, formatSize } from '@/app/utils/dateUtils';
 import MultiStepModal from '@/app/components/MultiStepModal';
+import { useRouter } from 'next/navigation';
 
-interface File {
-  id: string;
-  fileName: string;
-  size: number;
-  url: string;
+interface Document {
+  id_document: string;
+  id_request_client: string;
+  id_deliverables_document: string | null;
+  file_name: string;
+  key: string;
+  bucket_name: string;
+  document_url: string;
+  size: string;  // note: API trả size là string
+  mine_type: string;
+  status_upload: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface User {
+  id_user: string;
+  username: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RequestClient {
-  id: string;
-  fullName: string;
+  id_request_client: string;
+  id_user: string | null;
+  fullname: string;
   email: string;
-  phoneNumber: string;
+  phone_number: string;
   address: string;
-  requestStatus: string;
-  createdAt: string;
-  files?: File[];
-  size?: number;
+  processing_request_details: string;
+  request_status: string;
+  created_at: string;
+  updated_at: string;
+  Documents: Document[];
+  User: User | null;
 }
 
 interface TableCell {
@@ -45,17 +65,16 @@ interface TableRow {
   cells: TableCell[];
 }
 
-interface DisplayRequestClient extends Omit<RequestClient, 'size' | 'createdAt'> {
-  size: string;
+interface DisplayRequestClient extends Omit<RequestClient, 'created_at'> {
   createdAt: string;
 }
 
 const headers = [
-  { key: 'fullName', header: 'Fullname' },
+  { key: 'fullname', header: 'Fullname' },
   { key: 'email', header: 'Email' },
-  { key: 'phoneNumber', header: 'Phone Number' },
+  { key: 'phone_number', header: 'Phone Number' },
   { key: 'address', header: 'Address' },
-  { key: 'requestStatus', header: 'Request Status' },
+  { key: 'request_status', header: 'Request Status' },
   { key: 'createdAt', header: 'Created At' },
 ];
 
@@ -65,16 +84,16 @@ export default function DocumentPage() {
   const [files, setFiles] = useState<RequestClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
-  const [sortKey, setSortKey] = useState('createdAt');
-  const [sortDirection] = useState<'ASC' | 'DESC'>('DESC');
+  const [sortKey, setSortKey] = useState('created_at'); // đổi thành key API trả về
   const [selectedDoc, setSelectedDoc] = useState<RequestClient | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchFiles = async () => {
       setLoading(true);
       try {
-        const sortString = sortKey ? `${sortKey}:${sortDirection.toLowerCase()}` : undefined;
+        const sortString = sortKey ? `${sortKey}:desc` : undefined;
         const response = await getAll('request-clients', '*', page, pageSize, sortString);
         setFiles(response.data);
         setTotalItems(response.meta.pagination.total);
@@ -86,7 +105,7 @@ export default function DocumentPage() {
     };
 
     fetchFiles();
-  }, [page, pageSize, sortKey, sortDirection]);
+  }, [page, pageSize, sortKey]);
 
   const handlePageChange = (pageInfo: { page: number; pageSize: number }) => {
     setPage(pageInfo.page);
@@ -97,19 +116,19 @@ export default function DocumentPage() {
     setSortKey(key);
   };
 
-  // Map lại dữ liệu để hiển thị size và createdAt dễ đọc
   const displayFiles = React.useMemo(() => {
     return files.map((file) => {
+      // chuyển created_at thành createdAt đã format
       const displayFile: DisplayRequestClient = {
         ...file,
-        size: formatSize(Number(file.size || 0)),
-        createdAt: formatDate(file.createdAt),
+        createdAt: formatDate(file.created_at),
       };
 
       const tableRow: TableRow = {
-        id: file.id,
+        id: file.id_request_client,
         cells: headers.map(header => {
-          const value = file[header.key as keyof RequestClient];
+          let value = file[header.key as keyof RequestClient];
+          if (header.key === 'createdAt') value = displayFile.createdAt; // lấy giá trị format
           return {
             id: header.key,
             value: typeof value === 'string' || typeof value === 'number' ? value : '',
@@ -130,12 +149,12 @@ export default function DocumentPage() {
           <div>
             <Breadcrumb noTrailingSlash>
               <BreadcrumbItem href="/">Home</BreadcrumbItem>
-              <BreadcrumbItem href="">Document</BreadcrumbItem>
-              <BreadcrumbItem href="/document/document-list" isCurrentPage>
-                List Document
+              <BreadcrumbItem href="">Service</BreadcrumbItem>
+              <BreadcrumbItem href="/service/client-requests" isCurrentPage>
+                Client Requests 
               </BreadcrumbItem>
             </Breadcrumb>
-            <h1 className="text-2xl font-semibold mt-2">Document</h1>
+            <h1 className="text-2xl font-semibold mt-2">Client Requests</h1>
           </div>
         </div>
 
@@ -150,37 +169,37 @@ export default function DocumentPage() {
             pageSize={pageSize}
             page={page}
             sortKey={sortKey}
-            sortDirection={sortDirection}
             onSort={handleSort}
             onRowClick={(row) => {
-              const doc = files.find((f) => f.id === row.id);
+              const doc = files.find((f) => f.id_request_client === row.id);
               if (doc) {
-                setSelectedDoc(doc);
-                setOpenDetail(true);
+                router.push(`/service/client-requests/${row.id}`);
               }
             }}
           />
         </div>
+
         <MultiStepModal
-          open={openDetail}
-          onClose={() => setOpenDetail(false)}
-          steps={[{ label: 'Document Details' }]}
-          currentStep={0}
-          modalHeading="Document Details"
-          primaryButtonText="Close"
-          secondaryButtonText="Assign to me"
-          onRequestSubmit={() => setOpenDetail(false)}
-          selectedDoc={selectedDoc as unknown as Record<string, string | number | null | undefined>}
-          headers={headers}
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            steps={[{ label: 'Document Details' }]}
+            currentStep={0}
+            modalHeading="Document Details"
+            primaryButtonText="Close"
+            secondaryButtonText="Assign to me"
+           
+            onRequestSubmit={() => setOpenDetail(false)}
+            selectedDoc={selectedDoc as unknown as Record<string, string | number | null | undefined>}
+            headers={headers}
         >
-          {selectedDoc?.files && selectedDoc.files.length > 0 && (
+          {selectedDoc?.Documents && selectedDoc.Documents.length > 0 && (
             <div style={{ gridColumn: '1 / span 2', marginTop: 8 }}>
               <label style={{ display: 'block', marginBottom: 4, color: '#fff' }}>Files</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {selectedDoc.files.map((file) => (
+                {selectedDoc.Documents.map((file) => (
                   <ClickableTile
-                    key={file.id}
-                    href={file.url}
+                    key={file.id_document}
+                    href={file.document_url}
                     rel="noopener noreferrer"
                     style={{
                       display: 'flex',
@@ -194,7 +213,7 @@ export default function DocumentPage() {
                   >
                     <Document size={24} />
                     <div>
-                      <div style={{ fontWeight: 500 }}>{file.fileName}</div>
+                      <div style={{ fontWeight: 500 }}>{file.file_name}</div>
                       <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(file.size))}</div>
                     </div>
                   </ClickableTile>

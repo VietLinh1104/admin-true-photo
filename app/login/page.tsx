@@ -31,12 +31,12 @@ function LoginContent() {
     try {
       const response = await login(identifier, password);
       
-      if (response.jwt && response.user) {
+      if (response.token && response.user) {
         // Choose storage based on remember me preference
         const storage = rememberMe ? localStorage : sessionStorage;
         
         // Store the JWT token
-        storage.setItem('token', response.jwt);
+        storage.setItem('token', response.token);
         // Store user data
         storage.setItem('user', JSON.stringify(response.user));
         

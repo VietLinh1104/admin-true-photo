@@ -6,27 +6,29 @@ import CustomDataTable from '@/app/components/DataTable';
 import { 
   Breadcrumb, 
   BreadcrumbItem,
-  ClickableTile
+  ClickableTile,
+  Checkbox
 } from '@carbon/react';
 import { Document } from '@carbon/icons-react';
 import { getAll } from '@/lib/strapiClient';
 import { formatDate, formatSize } from '@/app/utils/dateUtils';
 import MultiStepModal from '@/app/components/MultiStepModal';
 
-interface File {
-  id: string;
-  fileName: string;
-  size: number;
-  url: string;
+interface User {
+  id_user: string;
+  username: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface EmailSubmission {
-  id: string;
-  email: string;
-  createdAt: string;
-  orderStatus: string;
-  files?: File[];
-  size?: number;
+  id_client_email_submission: string;
+  client_email: string;
+  order_status: string;
+  created_at: string;
+  updated_at: string;
+  User: User | null;
 }
 
 interface TableCell {
@@ -48,9 +50,10 @@ interface DisplayEmailSubmission extends Omit<EmailSubmission, 'size' | 'created
 }
 
 const headers = [
-  { key: 'email', header: 'Email' },
-  { key: 'createdAt', header: 'Created At' },
-  { key: 'orderStatus', header: 'Order Status' },
+  { key: 'client_email', header: 'Email' },
+  { key: 'order_status', header: 'Created At' },
+  { key: 'created_at', header: 'Order Status' },
+  { key: 'updated_at', header: 'Updated At' },
 ];
 
 export default function DocumentPage() {
@@ -69,11 +72,19 @@ export default function DocumentPage() {
       setLoading(true);
       try {
         const sortString = sortKey ? `${sortKey}:${sortDirection.toLowerCase()}` : undefined;
-        const response = await getAll('client-email-submissions', '*', page, pageSize, sortString);
-        setFiles(response.data);
+        const response = await getAll('email-submissions', '*', page, pageSize, sortString);
+        const mappedFiles = response.data.map((item: any) => ({
+          id_client_email_submission: item.id_client_email_submission,
+          client_email: item.client_email,
+          order_status: item.order_status,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          User: item.User,
+        }));
+        setFiles(mappedFiles);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {
-        console.error('Lỗi khi fetch dữ liệu:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -96,14 +107,14 @@ export default function DocumentPage() {
     return files.map((file) => {
       const displayFile: DisplayEmailSubmission = {
         ...file,
-        size: formatSize(Number(file.size || 0)),
-        createdAt: formatDate(file.createdAt),
+        size: formatSize(0), // Placeholder as size is not in the new structure
+        createdAt: formatDate(file.created_at),
       };
 
       const tableRow: TableRow = {
-        id: file.id,
+        id: file.id_client_email_submission,
         cells: headers.map(header => {
-          const value = file[header.key as keyof EmailSubmission];
+          const value = header.key === 'User.username' ? file.User?.username : file[header.key as keyof EmailSubmission];
           return {
             id: header.key,
             value: typeof value === 'string' || typeof value === 'number' ? value : '',
@@ -147,7 +158,7 @@ export default function DocumentPage() {
             sortDirection={sortDirection}
             onSort={handleSort}
             onRowClick={(row) => {
-              const doc = files.find((f) => f.id === row.id);
+              const doc = files.find((f) => f.id_client_email_submission === row.id);
               if (doc) {
                 setSelectedDoc(doc);
                 setOpenDetail(true);
@@ -167,35 +178,32 @@ export default function DocumentPage() {
           selectedDoc={selectedDoc as unknown as Record<string, string | number | null | undefined>}
           headers={headers}
         >
-          {selectedDoc?.files && selectedDoc.files.length > 0 && (
+          {/* {selectedDoc?.User && (
             <div style={{ gridColumn: '1 / span 2', marginTop: 8 }}>
-              <label style={{ display: 'block', marginBottom: 4, color: '#fff' }}>Files</label>
+              <label style={{ display: 'block', marginBottom: 4, color: '#fff' }}>User</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {selectedDoc.files.map((file) => (
-                  <ClickableTile
-                    key={file.id}
-                    href={file.url}
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      backgroundColor: '#262626',
-                      color: '#fff',
-                      padding: 12,
-                      minHeight: 48,
-                    }}
-                  >
-                    <Document size={24} />
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{file.fileName}</div>
-                      <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(file.size))}</div>
-                    </div>
-                  </ClickableTile>
-                ))}
+                <ClickableTile
+                  key={selectedDoc.User.id_user}
+                  href="#"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    backgroundColor: '#262626',
+                    color: '#fff',
+                    padding: 12,
+                    minHeight: 48,
+                  }}
+                >
+                  <Document size={24} />
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{selectedDoc.User.username}</div>
+                    <div style={{ fontSize: 12, color: '#bbb' }}>Role: {selectedDoc.User.role}</div>
+                  </div>
+                </ClickableTile>
               </div>
             </div>
-          )}
+          )} */}
         </MultiStepModal>
       </div>
     </DashboardLayout>

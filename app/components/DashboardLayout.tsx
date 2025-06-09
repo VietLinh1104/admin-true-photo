@@ -13,11 +13,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   return (
     <Theme theme="g100">
       <div className="dashboard-container">
-        <Navbar />
+        <div className="z-10">
 
-        <div className="dashboard-content">
+        <Navbar />
+        </div>
+
+        <div className="dashboard-content z-0">
           <Sidebar />
-          <main className="main-content pt-20 !bg-[#262626]">
+          <main className="main-content px-0 !bg-[#161616]">
             {children}
           </main>
         </div>

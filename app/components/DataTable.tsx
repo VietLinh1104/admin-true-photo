@@ -73,7 +73,6 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
           className="bg-black !p-0"
           rowCount={2} 
           columnCount={7} 
-          headers={headers}
           showHeader={false}
           showToolbar={false}
         />
@@ -116,39 +115,33 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {rows.map((row) => {
+                    {rows.map((row, rowIndex) => {
                       const rowProps = getRowProps({ row });
                       const { key: rowKey, ...restRowProps } = rowProps;
                       return (
                         <TableRow
-                          key={rowKey}
+                          key={rowKey || `row-${rowIndex}`}
                           {...restRowProps}
                           onClick={() => onRowClick && onRowClick(row)}
                           style={{ cursor: onRowClick ? 'pointer' : undefined }}
                         >
-                          {row.cells.map((cell) => {
-                            if (cell.info && cell.info.header === 'mimeType') {
-                              return (
-                                <TableCell key={cell.id}>
-                                  <Tag type="blue">{cell.value}</Tag>
-                                </TableCell>
-                              );
-                            }
-                            if (cell.info && cell.info.header === 'statusUpload') {
-                              let tagType: 'gray' | 'green' | 'red' | 'blue' | 'warm-gray' | 'magenta' | 'purple' | 'cyan' | 'teal' | 'cool-gray' | 'high-contrast' | 'outline' = 'gray';
-                              if (cell.value === 'success') tagType = 'green';
-                              else if (cell.value === 'error') tagType = 'red';
-                              else if (cell.value === 'pending') tagType = 'warm-gray';
-                              return (
-                                <TableCell key={cell.id}>
-                                  <Tag type={tagType}>{cell.value}</Tag>
-                                </TableCell>
-                              );
-                            }
-                            return (
-                              <TableCell key={cell.id}>{cell.value}</TableCell>
-                            );
-                          })}
+                          {row.cells.map((cell, cellIndex) => (
+                            <TableCell key={cell.id || `cell-${rowIndex}-${cellIndex}`}>
+                              {cell.info && cell.info.header === 'mimeType' ? (
+                                <Tag type="blue">{cell.value}</Tag>
+                              ) : cell.info && cell.info.header === 'statusUpload' ? (
+                                (() => {
+                                  let tagType: 'gray' | 'green' | 'red' | 'blue' | 'warm-gray' | 'magenta' | 'purple' | 'cyan' | 'teal' | 'cool-gray' | 'high-contrast' | 'outline' = 'gray';
+                                  if (cell.value === 'success') tagType = 'green';
+                                  else if (cell.value === 'error') tagType = 'red';
+                                  else if (cell.value === 'pending') tagType = 'warm-gray';
+                                  return <Tag type={tagType}>{cell.value}</Tag>;
+                                })()
+                              ) : (
+                                cell.value
+                              )}
+                            </TableCell>
+                          ))}
                           {(onEdit || onDelete) && (
                             <TableCell>
                               <OverflowMenu
@@ -200,4 +193,4 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
   );
 };
 
-export default CustomDataTable; 
+export default CustomDataTable;

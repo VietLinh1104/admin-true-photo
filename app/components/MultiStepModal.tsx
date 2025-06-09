@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, TextInput } from '@carbon/react';
+import { Modal, TextInput, TextArea } from '@carbon/react';
 import { formatDate, formatSize } from '@/app/utils/dateUtils';
 
 interface Document {
@@ -66,7 +66,7 @@ const MultiStepModal: React.FC<MultiStepModalProps> = ({
                 value={
                   h.key === 'size'
                     ? formatSize(Number(selectedDoc[h.key]))
-                    : h.key === 'createdAt' || h.key === 'updatedAt' || h.key === 'publishedAt'
+                    : h.key === 'created_at' || h.key === 'updated_at' || h.key === 'publishedAt'
                       ? formatDate(selectedDoc[h.key] as string)
                       : String(selectedDoc[h.key] ?? '')
                 }
@@ -84,4 +84,4 @@ const MultiStepModal: React.FC<MultiStepModalProps> = ({
   );
 };
 
-export default MultiStepModal; 
+export default MultiStepModal;
