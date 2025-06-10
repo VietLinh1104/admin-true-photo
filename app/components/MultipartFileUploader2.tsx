@@ -127,6 +127,9 @@ export function MultipartFileUploader({
           dataUpload.id_deliverables_document = idDeliverablesDocument;
         }
 
+        console.log("🔼 Payload gửi lên backend (documents):", dataUpload);
+
+
         const res = await create<UploadData>("documents", dataUpload);
         const documentId = res.data.id_document;
         if (!documentId) {

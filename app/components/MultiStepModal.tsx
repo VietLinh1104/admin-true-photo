@@ -19,6 +19,7 @@ interface MultiStepModalProps {
   modalHeading?: string;
   primaryButtonText?: string;
   secondaryButtonText?: string;
+  secondaryButtonDisable? : boolean;
   onRequestSubmit?: () => void;
   onRequestSecondary?: () => void;
   selectedDoc?: Document;
@@ -33,6 +34,7 @@ const MultiStepModal: React.FC<MultiStepModalProps> = ({
   primaryButtonText = 'Next',
   secondaryButtonText = 'Previous',
   onRequestSubmit,
+  secondaryButtonDisable = false,
   onRequestSecondary,
   selectedDoc,
   headers
@@ -43,6 +45,7 @@ const MultiStepModal: React.FC<MultiStepModalProps> = ({
       modalHeading={modalHeading}
       primaryButtonText={primaryButtonText}
       secondaryButtonText={secondaryButtonText}
+      // secondaryButtonDisabled={secondaryButtonDisable}
       onRequestClose={onClose}
       onRequestSubmit={onRequestSubmit}
       onSecondarySubmit={onRequestSecondary}

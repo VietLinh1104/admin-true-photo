@@ -22,16 +22,17 @@ interface BreadcrumbItemType {
 interface MenuItem {
   itemText: string;
   onClick: () => void;
-  isDelete?: boolean; // Optional: marks item as destructive (e.g., for "Delete")
+  isDelete?: boolean;
 }
 
 interface PageLayoutProps {
   children: React.ReactNode;
   breadcrumbData: BreadcrumbItemType[];
-  buttonLabel?: string; // Prop for Button text
-  buttonIcon?: React.ComponentType; // Prop for Button icon
-  buttonOnClick?: () => void; // Prop for Button click handler
-  menuItems?: MenuItem[]; // Prop for OverflowMenu items
+  buttonLabel?: string;
+  buttonIcon?: React.ComponentType;
+  buttonOnClick?: () => void;
+  buttonDisabled?: boolean; // ✅ NEW PROP
+  menuItems?: MenuItem[];
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({
@@ -40,6 +41,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   buttonLabel = 'Assign to me',
   buttonIcon = Add,
   buttonOnClick,
+  buttonDisabled = false, // ✅ Default to false
   menuItems = [{ itemText: 'Delete', onClick: () => {}, isDelete: true }],
 }) => {
   return (
@@ -66,7 +68,12 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           {/* Buttons + OverflowMenu */}
           <div className="top-10 right-10 flex space-x-4 items-center my-auto col-span-1">
             <div className="flex justify-between items-center w-full">
-              <Button kind="primary" renderIcon={buttonIcon} onClick={buttonOnClick}>
+              <Button
+                kind="primary"
+                renderIcon={buttonIcon}
+                onClick={buttonOnClick}
+                disabled={buttonDisabled} // ✅ Disable when prop is true
+              >
                 {buttonLabel}
               </Button>
               <OverflowMenu ariaLabel="More options" flipped>
@@ -93,8 +100,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
         <div className="col-span-1">
           <Tile>
             <h1 className="text-base font-bold mb-4">Assignment</h1>
-            <p>This is the document list page.</p>
-            {/* Add your document list content here */}
+            <p>Not available.</p>
           </Tile>
         </div>
       </div>

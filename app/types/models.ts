@@ -1,6 +1,6 @@
 export interface Document {
   id_document: string;
-  id_request_client: string;
+  id_request_client: string | null;
   id_deliverables_document: string | null;
   file_name: string;
   key: string;

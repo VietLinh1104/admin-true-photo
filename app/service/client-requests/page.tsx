@@ -139,7 +139,10 @@ export default function DocumentPage() {
   }, [files]);
 
   return (
-    <ListLayout breadcrumbData={breadcrumbData}>
+    <ListLayout 
+      breadcrumbData={breadcrumbData}
+      buttonDisabled={true}
+    >
       <div className="p-0 rounded-lg shadow">
         <CustomDataTable
           loading={loading}
