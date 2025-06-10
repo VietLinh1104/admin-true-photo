@@ -1,17 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import DashboardLayout from '@/app/components/DashboardLayout';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import ListLayout from '@/app/components/ListLayout';
 import CustomDataTable from '@/app/components/DataTable';
-import { 
-  Breadcrumb, 
-  BreadcrumbItem,
-  ClickableTile
-} from '@carbon/react';
-import { Document } from '@carbon/icons-react';
 import { getAll } from '@/lib/strapiClient';
-import { formatDate, formatSize } from '@/app/utils/dateUtils';
-import MultiStepModal from '@/app/components/MultiStepModal';
+import { formatDate } from '@/app/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 
 interface Document {
@@ -22,7 +16,7 @@ interface Document {
   key: string;
   bucket_name: string;
   document_url: string;
-  size: string;  // note: API trả size là string
+  size: string;
   mine_type: string;
   status_upload: string;
   created_at: string;
@@ -78,15 +72,19 @@ const headers = [
   { key: 'createdAt', header: 'Created At' },
 ];
 
+const breadcrumbData = [
+  { label: 'Home', href: '/' },
+  { label: 'Service', href: '' },
+  { label: 'Client Requests', href: '/service/client-requests', isCurrentPage: true },
+];
+
 export default function DocumentPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [files, setFiles] = useState<RequestClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
-  const [sortKey, setSortKey] = useState('created_at'); // đổi thành key API trả về
-  const [selectedDoc, setSelectedDoc] = useState<RequestClient | null>(null);
-  const [openDetail, setOpenDetail] = useState(false);
+  const [sortKey, setSortKey] = useState('created_at');
   const router = useRouter();
 
   useEffect(() => {
@@ -98,7 +96,7 @@ export default function DocumentPage() {
         setFiles(response.data);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {
-        console.error('Lỗi khi fetch dữ liệu:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -118,7 +116,6 @@ export default function DocumentPage() {
 
   const displayFiles = React.useMemo(() => {
     return files.map((file) => {
-      // chuyển created_at thành createdAt đã format
       const displayFile: DisplayRequestClient = {
         ...file,
         createdAt: formatDate(file.created_at),
@@ -126,15 +123,15 @@ export default function DocumentPage() {
 
       const tableRow: TableRow = {
         id: file.id_request_client,
-        cells: headers.map(header => {
+        cells: headers.map((header) => {
           let value = file[header.key as keyof RequestClient];
-          if (header.key === 'createdAt') value = displayFile.createdAt; // lấy giá trị format
+          if (header.key === 'createdAt') value = displayFile.createdAt;
           return {
             id: header.key,
             value: typeof value === 'string' || typeof value === 'number' ? value : '',
-            info: { header: header.key }
+            info: { header: header.key },
           };
-        })
+        }),
       };
 
       return { ...displayFile, ...tableRow };
@@ -142,87 +139,23 @@ export default function DocumentPage() {
   }, [files]);
 
   return (
-    <DashboardLayout>
-      <div className="document-page mx-auto max-w-7xl space-y-6">
-        {/* Header Section */}
-        <div className="flex justify-between items-center">
-          <div>
-            <Breadcrumb noTrailingSlash>
-              <BreadcrumbItem href="/">Home</BreadcrumbItem>
-              <BreadcrumbItem href="">Service</BreadcrumbItem>
-              <BreadcrumbItem href="/service/client-requests" isCurrentPage>
-                Client Requests 
-              </BreadcrumbItem>
-            </Breadcrumb>
-            <h1 className="text-2xl font-semibold mt-2">Client Requests</h1>
-          </div>
-        </div>
-
-        {/* List Section */}
-        <div className="p-0 rounded-lg shadow">
-          <CustomDataTable
-            loading={loading}
-            rows={displayFiles}
-            headers={headers}
-            totalItems={totalItems}
-            onPageChange={handlePageChange}
-            pageSize={pageSize}
-            page={page}
-            sortKey={sortKey}
-            onSort={handleSort}
-            onRowClick={(row) => {
-              const doc = files.find((f) => f.id_request_client === row.id);
-              if (doc) {
-                router.push(`/service/client-requests/${row.id}`);
-              }
-            }}
-          />
-        </div>
-
-        <MultiStepModal
-            open={openDetail}
-            onClose={() => setOpenDetail(false)}
-            steps={[{ label: 'Document Details' }]}
-            currentStep={0}
-            modalHeading="Document Details"
-            primaryButtonText="Close"
-            secondaryButtonText="Assign to me"
-           
-            onRequestSubmit={() => setOpenDetail(false)}
-            selectedDoc={selectedDoc as unknown as Record<string, string | number | null | undefined>}
-            headers={headers}
-        >
-          {selectedDoc?.Documents && selectedDoc.Documents.length > 0 && (
-            <div style={{ gridColumn: '1 / span 2', marginTop: 8 }}>
-              <label style={{ display: 'block', marginBottom: 4, color: '#fff' }}>Files</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {selectedDoc.Documents.map((file) => (
-                  <ClickableTile
-                    key={file.id_document}
-                    href={file.document_url}
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      backgroundColor: '#262626',
-                      color: '#fff',
-                      padding: 12,
-                      minHeight: 48,
-                    }}
-                  >
-                    <Document size={24} />
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{file.file_name}</div>
-                      <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(file.size))}</div>
-                    </div>
-                  </ClickableTile>
-                ))}
-              </div>
-            </div>
-          )}
-        </MultiStepModal>
+    <ListLayout breadcrumbData={breadcrumbData}>
+      <div className="p-0 rounded-lg shadow">
+        <CustomDataTable
+          loading={loading}
+          rows={displayFiles}
+          headers={headers}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          pageSize={pageSize}
+          page={page}
+          sortKey={sortKey}
+          onSort={handleSort}
+          onRowClick={(row) => {
+            router.push(`/service/client-requests/${row.id}`);
+          }}
+        />
       </div>
-    </DashboardLayout>
+    </ListLayout>
   );
 }

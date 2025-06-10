@@ -1,18 +1,18 @@
 'use client';
 
 import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PageLayout from '@/app/components/PageLayout';
 import {
   Tile,
   TextInput,
   ClickableTile,
   Button,
-  Modal
+  Modal,
 } from '@carbon/react';
-import { AddAlt, Information } from '@carbon/icons-react';
+import { AddAlt, Information, UserFollow } from '@carbon/icons-react';
 import { MultipartFileUploader } from '@/app/components/MultipartFileUploader2';
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { formatSize, formatDate } from '@/app/utils/dateUtils';
 import { Document, RequestClient } from '@/app/types/models';
@@ -30,7 +30,7 @@ interface UploadData {
   document_url: string;
   size: number;
   mine_type: string;
-  status_upload: "success" | "error";
+  status_upload: 'success' | 'error';
 }
 
 const Dataheaders = [
@@ -41,17 +41,12 @@ const Dataheaders = [
   { key: 'created_at', header: 'Created At' },
   { key: 'updated_at', header: 'Updated At' },
   { key: 'request_status', header: 'Request Status' },
-  { key: 'processing_request_details', header: 'Processing Request Details' }
-];
-
-const breadcrumbData = [
-  { label: 'Home', href: '/' },
-  { label: 'Service', href: '' },
-  { label: 'Client Requests', href: '/serviceclient-requests', isCurrentPage: true }
+  { key: 'processing_request_details', header: 'Processing Request Details' },
 ];
 
 export default function DocumentPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id;
   const [headers] = useState(Dataheaders);
   const [dataClient, setDataClient] = useState<RequestClient | null>(null);
@@ -60,15 +55,54 @@ export default function DocumentPage() {
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState<Document | null>(null);
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [openConfirmDeleteRequest, setOpenConfirmDeleteRequest] = useState(false);
   const [canUpload, setCanUpload] = useState(false);
-
   const triggerUploadRef = useRef<(() => Promise<UploadData>) | null>(null);
+
+  const breadcrumbData = [
+    { label: 'Home', href: '/' },
+    { label: 'Service', href: '' },
+    { label: 'Client Requests', href: '/service/client-requests' },
+    {
+      label: dataClient?.fullname || 'Request Details',
+      href: `/service/client-requests/${Array.isArray(id) ? id[0] : id || ''}`,
+      isCurrentPage: true,
+    },
+  ];
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        if (typeof id === 'string' || typeof id === 'number') {
+          const res = await getOne<RequestClient>('request-clients', id);
+          setDataClient(res.data);
+        } else {
+          setError('Invalid or missing ID parameter.');
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    };
+    fetchUsers();
+  }, [id]);
 
   const handleConfirmDelete = async () => {
     if (selectedFile) {
       await handleDeleteDocument(selectedFile);
       setOpenConfirmDelete(false);
     }
+  };
+
+  const handleConfirmDeleteRequest = async () => {
+    if (typeof id !== 'string') return;
+    try {
+      await remove('request-clients', id);
+      router.push('/service/client-requests');
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      setError('Failed to delete the request. Please try again later.');
+    }
+    setOpenConfirmDeleteRequest(false);
   };
 
   const handleConfirmUpload = async () => {
@@ -90,10 +124,12 @@ export default function DocumentPage() {
           status_upload: uploadData.status_upload,
         };
 
-        setDataClient(prevData => prevData ? {
-          ...prevData,
-          Documents: [...(prevData.Documents || []), newDocument]
-        } : prevData);
+        setDataClient((prevData) =>
+          prevData ? {
+            ...prevData,
+            Documents: [...(prevData.Documents || []), newDocument],
+          } : prevData
+        );
 
         setOpenUpload(false);
         setCanUpload(false);
@@ -103,36 +139,28 @@ export default function DocumentPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        if (typeof id === 'string' || typeof id === 'number') {
-          const res = await getOne<RequestClient>('request-clients', id);
-          setDataClient(res.data);
-        } else {
-          setError('Invalid or missing ID parameter.');
-        }
-      } catch (err) {
-        setError((err as Error).message);
-      }
-    };
-    fetchUsers();
-  }, [id]);
-
   const handleDeleteDocument = async (document: Document) => {
     try {
       if (!document.key || !document.id_document) return;
       const storageResponse = await deleteDocument(document.key);
       if (!storageResponse.success) return;
-      const dbResponse = await remove('documents', document.id_document);
-      setDataClient(prevData => prevData ? {
-        ...prevData,
-        Documents: (prevData.Documents || []).filter(doc => doc.id_document !== document.id_document)
-      } : prevData);
+      await remove('documents', document.id_document);
+      setDataClient((prevData) =>
+        prevData ? {
+          ...prevData,
+          Documents: (prevData.Documents || []).filter(
+            (doc) => doc.id_document !== document.id_document
+          ),
+        } : prevData
+      );
       setOpenDetail(false);
     } catch (error) {
       console.error('Error while deleting document:', error);
     }
+  };
+
+  const handleAssignToMe = () => {
+    console.log(`Assigning request ${dataClient?.id_request_client} to current user`);
   };
 
   const documentHeaders = [
@@ -147,14 +175,26 @@ export default function DocumentPage() {
   const documents = dataClient?.Documents || [];
 
   return (
-    <PageLayout breadcrumbData={breadcrumbData}>
+    <PageLayout
+      breadcrumbData={breadcrumbData}
+      buttonLabel="Assign to me"
+      buttonIcon={UserFollow}
+      buttonOnClick={handleAssignToMe}
+      menuItems={[
+        {
+          itemText: 'Delete Request',
+          onClick: () => setOpenConfirmDeleteRequest(true),
+          isDelete: true,
+        },
+      ]}
+    >
       <Tile className="mb-4">
-        <h1 className="text-base font-bold mb-4">Document List</h1>
+        <h1 className="text-base font-bold mb-4">Client Details</h1>
         <div className="grid grid-cols-2 gap-4 mt-6">
           <div className="col-span-2">
             <div className="grid grid-cols-2 gap-4 bg-[#262626] rounded-md">
               {dataClient && headers.length > 0 ? (
-                headers.map(h => (
+                headers.map((h) => (
                   <TextInput
                     key={h.key}
                     id={h.key}
@@ -163,8 +203,8 @@ export default function DocumentPage() {
                       h.key === 'size'
                         ? formatSize(Number((dataClient as any)[h.key]))
                         : ['created_at', 'updated_at', 'publishedAt'].includes(h.key)
-                          ? formatDate((dataClient as any)[h.key])
-                          : String((dataClient as any)[h.key] ?? '')
+                        ? formatDate((dataClient as any)[h.key])
+                        : String((dataClient as any)[h.key] ?? '')
                     }
                     readOnly
                     style={{
@@ -225,7 +265,9 @@ export default function DocumentPage() {
                     <FileText size={24} />
                     <div>
                       <div style={{ fontWeight: 500 }}>{file.file_name}</div>
-                      <div style={{ fontSize: 12, color: '#bbb' }}>{formatSize(Number(file.size))}</div>
+                      <div style={{ fontSize: 12, color: '#bbb' }}>
+                        {formatSize(Number(file.size))}
+                      </div>
                     </div>
                   </div>
                   <Information size={20} style={{ color: '#bbb' }} />
@@ -259,6 +301,16 @@ export default function DocumentPage() {
           secondaryButtonText="Cancel"
           onConfirm={handleConfirmDelete}
           onCancel={() => setOpenConfirmDelete(false)}
+        />
+
+        <ConfirmModal
+          open={openConfirmDeleteRequest}
+          heading="Confirm Deletion"
+          message="Are you sure you want to delete this request client?"
+          primaryButtonText="Delete"
+          secondaryButtonText="Cancel"
+          onConfirm={handleConfirmDeleteRequest}
+          onCancel={() => setOpenConfirmDeleteRequest(false)}
         />
 
         <Modal

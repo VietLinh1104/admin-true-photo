@@ -1,7 +1,7 @@
 'use client';
-import '@carbon/styles/css/styles.css';
 
-import React, { useState } from 'react';
+import '@carbon/styles/css/styles.css';
+import React from 'react';
 import DashboardLayout from './DashboardLayout';
 import {
   Breadcrumb,
@@ -9,12 +9,9 @@ import {
   Button,
   OverflowMenu,
   OverflowMenuItem,
-  Tabs, TabList, Tab, TabPanels, TabPanel,
-  Tile
-
+  Tile,
 } from '@carbon/react';
-
-
+import { Add } from '@carbon/icons-react';
 
 interface BreadcrumbItemType {
   label: string;
@@ -22,39 +19,29 @@ interface BreadcrumbItemType {
   isCurrentPage?: boolean;
 }
 
+interface MenuItem {
+  itemText: string;
+  onClick: () => void;
+  isDelete?: boolean; // Optional: marks item as destructive (e.g., for "Delete")
+}
+
 interface PageLayoutProps {
   children: React.ReactNode;
   breadcrumbData: BreadcrumbItemType[];
+  buttonLabel?: string; // Prop for Button text
+  buttonIcon?: React.ComponentType; // Prop for Button icon
+  buttonOnClick?: () => void; // Prop for Button click handler
+  menuItems?: MenuItem[]; // Prop for OverflowMenu items
 }
 
-
-
-const PageLayout: React.FC<PageLayoutProps> = ({ children, breadcrumbData }) => {
-
-  const tabs = [
-    {
-      label: 'Tab label 1',
-      panel: <TabPanel>Tab Panel 1</TabPanel>,
-    },
-    {
-      label: 'Tab label 2',
-      panel: <TabPanel>Tab Panel 2</TabPanel>,
-    },
-    {
-      label: 'Tab label 3',
-      panel: <TabPanel>Tab Panel 3</TabPanel>,
-      disabled: true,
-    },
-    {
-      label: 'Tab label 4',
-      panel: <TabPanel>Tab Panel 4</TabPanel>,
-    },
-  ];
-
-
-
-
-
+const PageLayout: React.FC<PageLayoutProps> = ({
+  children,
+  breadcrumbData,
+  buttonLabel = 'Assign to me',
+  buttonIcon = Add,
+  buttonOnClick,
+  menuItems = [{ itemText: 'Delete', onClick: () => {}, isDelete: true }],
+}) => {
   return (
     <DashboardLayout>
       {/* Header */}
@@ -79,11 +66,18 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, breadcrumbData }) => 
           {/* Buttons + OverflowMenu */}
           <div className="top-10 right-10 flex space-x-4 items-center my-auto col-span-1">
             <div className="flex justify-between items-center w-full">
-              <Button kind="primary">
-                Assign to me
+              <Button kind="primary" renderIcon={buttonIcon} onClick={buttonOnClick}>
+                {buttonLabel}
               </Button>
               <OverflowMenu ariaLabel="More options" flipped>
-                <OverflowMenuItem itemText="Delete" />
+                {menuItems.map((item, idx) => (
+                  <OverflowMenuItem
+                    key={idx}
+                    itemText={item.itemText}
+                    onClick={item.onClick}
+                    isDelete={item.isDelete}
+                  />
+                ))}
               </OverflowMenu>
             </div>
           </div>
@@ -92,14 +86,11 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, breadcrumbData }) => 
 
       {/* Content */}
       <div className="px-10 grid grid-cols-4 gap-4">
-
         {/* Tabs */}
-        <div className="col-span-3">
-          {children}
-        </div>
+        <div className="col-span-3">{children}</div>
 
         {/* Assignment */}
-        <div className="col-span-1-">
+        <div className="col-span-1">
           <Tile>
             <h1 className="text-base font-bold mb-4">Assignment</h1>
             <p>This is the document list page.</p>
@@ -107,7 +98,6 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, breadcrumbData }) => 
           </Tile>
         </div>
       </div>
-
     </DashboardLayout>
   );
 };
