@@ -2,11 +2,10 @@ import React from "react";
 import Uppy, { UploadResult, UppyFile } from "@uppy/core";
 import { Dashboard } from "@uppy/react";
 import AwsS3Multipart, { AwsS3Part } from "@uppy/aws-s3-multipart";
-import {create} from "@/lib/apiClient"
+import { create } from "@/lib/apiClient";
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 
-// Định nghĩa interface cho payload của API
 interface UploadApiRequest {
   file?: { name: string };
   contentType?: string;
@@ -16,7 +15,6 @@ interface UploadApiRequest {
   parts?: AwsS3Part[];
 }
 
-// Định nghĩa interface mở rộng cho UppyFile
 interface ExtendedUppyFile extends UppyFile {
   uploadId?: string;
   response?: {
@@ -28,7 +26,7 @@ interface ExtendedUppyFile extends UppyFile {
 
 interface UploadData {
   id_document?: string;
-  id_request_client?: string; 
+  id_request_client?: string;
   id_deliverables_document?: string;
   file_name: string;
   key: string;
@@ -39,17 +37,17 @@ interface UploadData {
   status_upload: "success" | "error";
 }
 
-// Định nghĩa props cho component
 interface Props {
   onUploadSuccess: (result: string) => void;
+  onFileAdded?: (file: UppyFile) => void; // Updated to match Uppy's FileAddedCallback
+  onFileRemoved?: (file: UppyFile) => void; // Updated to match Uppy's FileRemovedCallback
   theme?: "light" | "dark";
-  triggerUploadRef: React.MutableRefObject<(() => Promise<string>) | null>;
+  triggerUploadRef: React.MutableRefObject<(() => Promise<UploadData>) | null>;
   onUploadComplete?: () => void;
-  idRequestClient?: string | null; // Thêm idRequestClient vào Props
-  idDeliverablesDocument?: string | null; // Thêm idDeliverablesDocument vào Props
+  idRequestClient?: string | null;
+  idDeliverablesDocument?: string | null;
 }
 
-// Hàm gọi API chung
 const fetchUploadApiEndpoint = async (endpoint: string, data: UploadApiRequest) => {
   const res = await fetch(`/api/multipart-upload/${endpoint}`, {
     method: "POST",
@@ -60,43 +58,48 @@ const fetchUploadApiEndpoint = async (endpoint: string, data: UploadApiRequest) 
   return res.json();
 };
 
-// Hàm tạo tên file duy nhất
 const generateUniqueFileName = (originalName: string): string => {
   const timestamp = Date.now();
-  const sanitizedOriginalName = originalName.replace(/[^a-zA-Z0-9.]/g, "-"); // Thay thế ký tự đặc biệt bằng '-'
+  const sanitizedOriginalName = originalName.replace(/[^a-zA-Z0-9.]/g, "-");
   return `${timestamp}-${sanitizedOriginalName}`;
 };
 
-// Component tải file lên sử dụng Uppy
-export function MultipartFileUploader({ onUploadSuccess, theme = "dark", triggerUploadRef, onUploadComplete, idRequestClient = null, idDeliverablesDocument = null }: Props) {
-  // Khởi tạo Uppy với plugin AWS S3 Multipart
-  const uppy = React.useRef(new Uppy({
-    autoProceed: false,
-    restrictions: { maxNumberOfFiles: 1 },
-  }).use(AwsS3Multipart, {
-    createMultipartUpload: (file) => {
-      // ✅ Tạo tên file duy nhất
-      const uniqueName = generateUniqueFileName(file.name);
+export function MultipartFileUploader({
+  onUploadSuccess,
+  onFileAdded,
+  onFileRemoved,
+  theme = "dark",
+  triggerUploadRef,
+  onUploadComplete,
+  idRequestClient = null,
+  idDeliverablesDocument = null,
+}: Props) {
+  const uppyRef = React.useRef(
+    new Uppy({
+      autoProceed: false,
+      restrictions: { maxNumberOfFiles: 1 },
+    }).use(AwsS3Multipart, {
+      createMultipartUpload: (file) => {
+        const uniqueName = generateUniqueFileName(file.name);
+        file.meta.name = uniqueName;
 
-      // ✅ Gán lại tên file đã xử lý vào file.meta để dùng lại trong các bước tiếp theo
-      file.meta.name = uniqueName;
+        return fetchUploadApiEndpoint("create-multipart-upload", {
+          file: { name: uniqueName },
+          contentType: file.type,
+          key: uniqueName,
+        });
+      },
+      listParts: (file, { key, uploadId }) => fetchUploadApiEndpoint("list-parts", { key, uploadId }),
+      signPart: (file, { key, uploadId, partNumber }) => fetchUploadApiEndpoint("sign-part", { key, uploadId, partNumber }),
+      completeMultipartUpload: (file, { key, uploadId, parts }) => fetchUploadApiEndpoint("complete-multipart-upload", { key, uploadId, parts }),
+      abortMultipartUpload: (file, { key, uploadId }) => fetchUploadApiEndpoint("abort-multipart-upload", { key, uploadId }),
+    })
+  );
 
-      return fetchUploadApiEndpoint("create-multipart-upload", {
-        file: { name: uniqueName },
-        contentType: file.type,
-        key: uniqueName, // 🟢 Truyền key duy nhất tại đây
-      });
-    },
-    listParts: (file, { key, uploadId }) => fetchUploadApiEndpoint("list-parts", { key, uploadId }),
-    signPart: (file, { key, uploadId, partNumber }) => fetchUploadApiEndpoint("sign-part", { key, uploadId, partNumber }),
-    completeMultipartUpload: (file, { key, uploadId, parts }) => fetchUploadApiEndpoint("complete-multipart-upload", { key, uploadId, parts }),
-    abortMultipartUpload: (file, { key, uploadId }) => fetchUploadApiEndpoint("abort-multipart-upload", { key, uploadId }),
-  })).current;
-
+  const uppy = uppyRef.current;
   const documentIdRef = React.useRef<string | null>(null);
-  const resolveUploadRef = React.useRef<((id: string) => void) | null>(null);
+  const resolveUploadRef = React.useRef<((data: UploadData) => void) | null>(null);
 
-  // Xử lý khi upload hoàn tất
   React.useEffect(() => {
     const onComplete = async (result: UploadResult) => {
       try {
@@ -117,7 +120,6 @@ export function MultipartFileUploader({ onUploadSuccess, theme = "dark", trigger
           status_upload: "success",
         };
 
-        // Chỉ thêm nếu có giá trị
         if (idRequestClient) {
           dataUpload.id_request_client = idRequestClient;
         }
@@ -125,38 +127,56 @@ export function MultipartFileUploader({ onUploadSuccess, theme = "dark", trigger
           dataUpload.id_deliverables_document = idDeliverablesDocument;
         }
 
-        console.log("Payload gửi lên API:", dataUpload); // Log payload để kiểm tra
-
         const res = await create<UploadData>("documents", dataUpload);
-        const documentId = res.data.id_document; // Extract id_document from the response
+        const documentId = res.data.id_document;
         if (!documentId) {
           throw new Error("Không thể lưu dữ liệu upload");
         }
 
-        console.log("Dữ liệu upload đã được lưu:", res);
+        dataUpload.id_document = documentId;
 
-        // ✅ Gọi resolveUploadRef tại đây khi đã có id_document
-        resolveUploadRef.current?.(documentId);
+        resolveUploadRef.current?.(dataUpload);
+        onUploadSuccess(documentId);
+
+        uppy.getFiles().forEach(file => uppy.removeFile(file.id));
       } catch (error) {
         console.error('Lỗi khi hoàn tất upload:', error);
-        resolveUploadRef.current?.(""); // hoặc reject nếu muốn bắt lỗi ở nơi gọi
+        resolveUploadRef.current?.({
+          file_name: '',
+          key: '',
+          bucket_name: '',
+          document_url: '',
+          size: 0,
+          mine_type: '',
+          status_upload: 'error',
+        });
       } finally {
         onUploadComplete?.();
       }
     };
 
+    const handleFileAdded = (file: UppyFile) => {
+      onFileAdded?.(file);
+    };
+
+    const handleFileRemoved = (file: UppyFile) => {
+      onFileRemoved?.(file);
+    };
+
+    uppy.on("file-added", handleFileAdded);
+    uppy.on("file-removed", handleFileRemoved);
     uppy.on("complete", onComplete);
+
     return () => {
+      uppy.off("file-added", handleFileAdded);
+      uppy.off("file-removed", handleFileRemoved);
       uppy.off("complete", onComplete);
     };
-  }, [onUploadComplete, uppy, idRequestClient]);
+  }, [onUploadComplete, uppy, idRequestClient, idDeliverablesDocument, onUploadSuccess, onFileAdded, onFileRemoved]);
 
-
-
-  // Thiết lập hàm trigger upload
   React.useEffect(() => {
     triggerUploadRef.current = () =>
-      new Promise<string>(async (resolve, reject) => {
+      new Promise<UploadData>(async (resolve, reject) => {
         resolveUploadRef.current = resolve;
 
         try {
@@ -170,10 +190,6 @@ export function MultipartFileUploader({ onUploadSuccess, theme = "dark", trigger
           if (failed.length > 0) {
             reject(new Error("Upload thất bại"));
           }
-
-          // ✅ Việc resolve đã được xử lý bên trong `onComplete`
-          // Không cần resolve ở đây nữa
-
         } catch (error) {
           reject(error);
         }
@@ -184,7 +200,6 @@ export function MultipartFileUploader({ onUploadSuccess, theme = "dark", trigger
     };
   }, [triggerUploadRef, uppy]);
 
-  // Render giao diện Uppy Dashboard
   return (
     <Dashboard
       uppy={uppy}
