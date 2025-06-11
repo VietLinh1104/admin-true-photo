@@ -1,4 +1,3 @@
-// lib/apiClient.ts
 import axios from 'axios';
 import { ApiResponse } from '@/app/types/models';
 
@@ -48,9 +47,9 @@ export const getOne = async <T>(
 };
 
 // POST tạo bản ghi
-export const create = async <T>(
+export const create = async <T, P = Partial<T>>(
   collection: string,
-  payload: T
+  payload: P
 ): Promise<ApiResponse<T>> => {
   const url = `${API_URL}/${collection}`;
   const { data } = await axios.post<ApiResponse<T>>(url, { data: payload }, {

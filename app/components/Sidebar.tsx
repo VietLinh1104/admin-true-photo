@@ -28,7 +28,6 @@ const Sidebar: React.FC = () => {
           Dashboard
         </SideNavLink>
         <SideNavMenu renderIcon={Document} title="Document Management">
-          <SideNavMenuItem href="/document/upload">Upload Document</SideNavMenuItem>
           <SideNavMenuItem href="/document/document-list">List Document</SideNavMenuItem>
         </SideNavMenu>
         <SideNavMenu renderIcon={Category} title="Service Management">

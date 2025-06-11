@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.scss";
 import "@uppy/core/dist/style.css";
 import "@uppy/dashboard/dist/style.css";
+import { NotificationProvider } from '@/app/context/NotificationContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <NotificationProvider>{children}</NotificationProvider>
       </body>
     </html>
   );

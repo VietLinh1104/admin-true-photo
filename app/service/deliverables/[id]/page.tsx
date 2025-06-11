@@ -3,22 +3,17 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import PageLayout from '@/app/components/PageLayout';
-import {
-  Tile,
-  TextInput,
-  ClickableTile,
-  Button,
-  Modal,
-} from '@carbon/react';
+import { Tile, TextInput, ClickableTile, Button, Modal } from '@carbon/react';
 import { AddAlt, Information, UserFollow, Edit } from '@carbon/icons-react';
 import { MultipartFileUploader } from '@/app/components/MultipartFileUploader2';
 import { useRouter, useParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { formatSize, formatDate } from '@/app/utils/dateUtils';
-import { Document, RequestClient } from '@/app/types/models';
-import { getOne, deleteDocument, remove } from '@/lib/apiClient';
+import { Document } from '@/app/types/models';
+import { getOne, deleteDocument, remove, update } from '@/lib/apiClient';
 import MultiStepModal from '@/app/components/MultiStepModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
+import { useNotification } from '@/app/context/NotificationContext';
 
 interface UploadData {
   id_document?: string;
@@ -64,9 +59,9 @@ export default function DocumentPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id;
+  const { addNotification } = useNotification();
   const [headers] = useState(Dataheaders);
   const [dataClient, setDataClient] = useState<Deliverable | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [openUpload, setOpenUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState<Document | null>(null);
@@ -74,9 +69,9 @@ export default function DocumentPage() {
   const [openConfirmDeleteRequest, setOpenConfirmDeleteRequest] = useState(false);
   const [canUpload, setCanUpload] = useState(false);
   const [isEdited, setIsEdited] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const triggerUploadRef = useRef<(() => Promise<UploadData>) | null>(null);
   const [formState, setFormState] = useState<Partial<Deliverable>>({});
-
 
   const breadcrumbData = [
     { label: 'Home', href: '/' },
@@ -90,38 +85,21 @@ export default function DocumentPage() {
   ];
 
   useEffect(() => {
-  const fetchUsers = async () => {
-    try {
-      if (typeof id === 'string' || typeof id === 'number') {
-        const res = await getOne<Deliverable>('deliverables-documents', id);
-        setDataClient(res.data);
-        setFormState(res.data); // đồng bộ dữ liệu vào form
-      } else {
-        setError('Invalid or missing ID parameter.');
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
-  fetchUsers();
-}, [id]);
-
-
-  useEffect(() => {
     const fetchUsers = async () => {
       try {
         if (typeof id === 'string' || typeof id === 'number') {
           const res = await getOne<Deliverable>('deliverables-documents', id);
           setDataClient(res.data);
+          setFormState(res.data); // Sync data into form
         } else {
-          setError('Invalid or missing ID parameter.');
+          addNotification('error', 'Invalid or missing ID parameter.');
         }
       } catch (err) {
-        setError((err as Error).message);
+        addNotification('error', (err as Error).message);
       }
     };
     fetchUsers();
-  }, [id]);
+  }, [id, addNotification]);
 
   const handleConfirmDelete = async () => {
     if (selectedFile) {
@@ -137,7 +115,7 @@ export default function DocumentPage() {
       router.push('/service/deliverables');
     } catch (error) {
       console.error('Error deleting request:', error);
-      setError('Failed to delete the request. Please try again later.');
+      addNotification('error', 'Failed to delete the request. Please try again later.');
     }
     setOpenConfirmDeleteRequest(false);
   };
@@ -162,16 +140,20 @@ export default function DocumentPage() {
         };
 
         setDataClient((prevData) =>
-          prevData ? {
-            ...prevData,
-            Documents: [...(prevData.Documents || []), newDocument],
-          } : prevData
+          prevData
+            ? {
+                ...prevData,
+                Documents: [...(prevData.Documents || []), newDocument],
+              }
+            : prevData
         );
 
         setOpenUpload(false);
         setCanUpload(false);
+        addNotification('success', 'Document uploaded successfully!');
       } catch (err) {
         console.error('Upload failed:', err);
+        addNotification('error', 'Failed to upload document. Please try again.');
       }
     }
   };
@@ -183,22 +165,47 @@ export default function DocumentPage() {
       if (!storageResponse.success) return;
       await remove('documents', document.id_document);
       setDataClient((prevData) =>
-        prevData ? {
-          ...prevData,
-          Documents: (prevData.Documents || []).filter(
-            (doc) => doc.id_document !== document.id_document
-          ),
-        } : prevData
+        prevData
+          ? {
+              ...prevData,
+              Documents: (prevData.Documents || []).filter(
+                (doc) => doc.id_document !== document.id_document
+              ),
+            }
+          : prevData
       );
       setOpenDetail(false);
+      addNotification('success', 'Document deleted successfully!');
     } catch (error) {
       console.error('Error while deleting document:', error);
+      addNotification('error', 'Failed to delete document. Please try again.');
     }
   };
 
-  const handleAssignToMe = () => {
-    console.log(`Assigning request ${dataClient?.User} to current user`);
-    setIsEdited(false); // Reset sau khi lưu
+  const handleSave = async () => {
+    if (typeof id !== 'string' && typeof id !== 'number') {
+      addNotification('error', 'Invalid or missing ID parameter.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const payload: Partial<Deliverable> = {
+        customer_name: formState.customer_name,
+        client_email: formState.client_email,
+        file_description: formState.file_description,
+      };
+      const response = await update<Deliverable>('deliverables-documents', id, payload);
+      setDataClient(response.data);
+      setFormState(response.data);
+      setIsEdited(false);
+      addNotification('success', 'Deliverable updated successfully!');
+    } catch (error) {
+      console.error('Error updating deliverable:', error);
+      addNotification('error', 'Failed to update the deliverable. Please try again later.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const documentHeaders = [
@@ -217,8 +224,8 @@ export default function DocumentPage() {
       breadcrumbData={breadcrumbData}
       buttonLabel="Save"
       buttonIcon={Edit}
-      buttonOnClick={handleAssignToMe}
-      buttonDisabled={!isEdited}
+      buttonOnClick={handleSave}
+      buttonDisabled={!isEdited || isSaving}
       menuItems={[
         {
           itemText: 'Delete Request',
@@ -232,39 +239,38 @@ export default function DocumentPage() {
         <div className="grid grid-cols-2 gap-4 mt-6">
           <div className="col-span-2">
             <div className="grid grid-cols-2 gap-4 bg-[#262626] rounded-md">
-             {dataClient && headers.length > 0 ? (
+              {dataClient && headers.length > 0 ? (
                 headers.map((h) => (
-                    <TextInput
+                  <TextInput
                     key={h.key}
                     id={h.key}
                     labelText={h.header}
                     readOnly={['created_at', 'updated_at'].includes(h.key)}
                     value={
-                        ['created_at', 'updated_at'].includes(h.key)
+                      ['created_at', 'updated_at'].includes(h.key)
                         ? formatDate((formState as any)[h.key])
                         : String((formState as any)[h.key] ?? '')
                     }
                     onChange={(e) => {
-                        const newValue = e.target.value;
-                        setFormState((prev) => ({
+                      const newValue = e.target.value;
+                      setFormState((prev) => ({
                         ...prev,
                         [h.key]: newValue,
-                        }));
-                        setIsEdited(true);
+                      }));
+                      setIsEdited(true);
                     }}
                     style={{
-                        marginBottom: 16,
-                        backgroundColor: '#393939',
-                        border: 'none',
-                        borderBottom: '1px solid #494A4C',
-                        width: '100%',
+                      marginBottom: 16,
+                      backgroundColor: '#393939',
+                      border: 'none',
+                      borderBottom: '1px solid #494A4C',
+                      width: '100%',
                     }}
-                    />
+                  />
                 ))
-                ) : (
+              ) : (
                 <p className="text-gray-500">No data available</p>
-                )}
-
+              )}
             </div>
           </div>
         </div>

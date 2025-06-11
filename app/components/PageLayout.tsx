@@ -47,7 +47,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="w-full justify-between items-center py-10">
+      <div className="w-full justify-between items-center py-10  ">
         <div className="mx-auto justify-between pl-16 pr-10 grid grid-cols-4 gap-4">
           {/* Breadcrumb */}
           <div className="col-span-3">
@@ -92,7 +92,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
       </div>
 
       {/* Content */}
-      <div className="px-10 grid grid-cols-4 gap-4">
+      <div className="px-10 grid grid-cols-4 gap-4 relative">
         {/* Tabs */}
         <div className="col-span-3">{children}</div>
 
