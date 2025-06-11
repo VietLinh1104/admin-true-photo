@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import ListLayout from '@/app/components/ListLayout';
 import CustomDataTable from '@/app/components/DataTable';
-import { getAll } from '@/lib/strapiClient';
+import { getAll } from '@/lib/apiClient';
 import { formatDate } from '@/app/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 
@@ -92,7 +92,7 @@ export default function DocumentPage() {
       setLoading(true);
       try {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
-        const response = await getAll('request-clients', '*', page, pageSize, sortString);
+        const response = await getAll<RequestClient>('request-clients', page, pageSize, sortString);
         setFiles(response.data);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {

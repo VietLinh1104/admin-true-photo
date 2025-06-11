@@ -10,6 +10,7 @@ import { Document as DocumentIcon } from '@carbon/icons-react';
 import { ClickableTile } from '@carbon/react';
 import MultiStepModal from '@/app/components/MultiStepModal';
 
+// Interface definitions
 interface Document {
   id_document: string;
   id_request_client: string | null;
@@ -94,26 +95,10 @@ export default function DocumentsPage() {
       try {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
         const response = await getAll<Document>('documents', page, pageSize, sortString);
-        const mappedDocuments = response.data.map((item: any) => ({
-          id_document: item.id_document,
-          id_request_client: item.id_request_client,
-          id_deliverables_document: item.id_deliverables_document,
-          file_name: item.file_name,
-          key: item.key,
-          bucket_name: item.bucket_name,
-          document_url: item.document_url,
-          size: item.size,
-          mine_type: item.mine_type,
-          status_upload: item.status_upload,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          DeliverablesDocument: item.DeliverablesDocument,
-          RequestClient: item.RequestClient,
-        }));
-        setDocuments(mappedDocuments);
+        setDocuments(response.data);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {
-        console.error('Lỗi khi fetch dữ liệu:', error);
+        console.error('Error fetching documents:', error);
       } finally {
         setLoading(false);
       }
@@ -156,7 +141,7 @@ export default function DocumentsPage() {
       const tableRow: TableRow = {
         id: doc.id_document,
         cells: headers.map((header) => {
-          let value = doc[header.key as keyof Document];
+          let value: string | number = doc[header.key as keyof Document] as string | number;
           if (header.key === 'createdAt') value = displayDoc.createdAt;
           if (header.key === 'updatedAt') value = displayDoc.updatedAt;
           if (header.key === 'size') value = displayDoc.size;

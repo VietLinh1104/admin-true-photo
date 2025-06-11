@@ -230,7 +230,7 @@ export default function DocumentPage() {
           <h1 className="text-base font-bold">Document List</h1>
           <Button
             kind="ghost"
-            // disabled={true}
+            disabled={true}
             renderIcon={AddAlt}
             iconDescription="Add document"
             onClick={() => setOpenUpload(true)}

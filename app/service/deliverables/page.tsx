@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import ListLayout from '@/app/components/ListLayout';
 import CustomDataTable from '@/app/components/DataTable';
-import { getAll } from '@/lib/strapiClient';
+import { getAll } from '@/lib/apiClient';
 import { formatDate, formatSize } from '@/app/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { Document } from '@carbon/icons-react';
@@ -13,7 +13,7 @@ import MultiStepModal from '@/app/components/MultiStepModal';
 
 interface Document {
   id_document: string;
-  id_request_client: string;
+  id_request_client: string | null;
   id_deliverables_document: string | null;
   file_name: string;
   key: string;
@@ -36,6 +36,7 @@ interface User {
 
 interface Deliverable {
   id_deliverables_document: string;
+  id_user: string | null;
   customer_name: string;
   client_email: string;
   created_at: string;
@@ -67,8 +68,8 @@ interface DisplayDeliverable extends Omit<Deliverable, 'created_at' | 'updated_a
 const headers = [
   { key: 'customer_name', header: 'Customer Name' },
   { key: 'client_email', header: 'Customer Email' },
-  { key: 'created_at', header: 'Created At' },
-  { key: 'updated_at', header: 'Updated At' },
+  { key: 'createdAt', header: 'Created At' },
+  { key: 'updatedAt', header: 'Updated At' },
   { key: 'file_description', header: 'File Description' },
 ];
 
@@ -94,7 +95,7 @@ export default function DeliverablesPage() {
       setLoading(true);
       try {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
-        const response = await getAll('deliverables-documents', '*', page, pageSize, sortString);
+        const response = await getAll<Deliverable>('deliverables-documents', page, pageSize, sortString);
         setFiles(response.data);
         setTotalItems(response.meta.pagination.total);
       } catch (error) {
@@ -103,6 +104,7 @@ export default function DeliverablesPage() {
         setLoading(false);
       }
     };
+
     fetchFiles();
   }, [page, pageSize, sortKey]);
 
