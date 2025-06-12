@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ApiResponse } from '@/app/types/models';
 
-const API_URL = `${process.env.NEXT_PUBLIC_STRAPI_URL}/api`;
+const API_URL = `${process.env.NEXT_PUBLIC_API}/api`;
 
 // Hàm lấy token và tạo header Authorization
 const getAuthToken = (): string | null =>
