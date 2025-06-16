@@ -3,10 +3,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { ToastNotification } from '@carbon/react';
 
-interface Notification {
-  type: 'success' | 'error';
-  message: string;
-}
 
 interface NotificationContextType {
   addNotification: (type: 'success' | 'error', message: string) => void;

@@ -86,6 +86,7 @@ export default function DeliverablesPage() {
   const [loading, setLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
   const [sortKey, setSortKey] = useState('created_at');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedDoc, setSelectedDoc] = useState<Deliverable | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const router = useRouter();
@@ -97,7 +98,8 @@ export default function DeliverablesPage() {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
         const response = await getAll<Deliverable>('deliverables-documents', page, pageSize, sortString);
         setFiles(response.data);
-        setTotalItems(response.meta.pagination.total);
+        setTotalItems(response.meta?.pagination?.total ?? 0);
+
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

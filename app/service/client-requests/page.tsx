@@ -94,7 +94,8 @@ export default function DocumentPage() {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
         const response = await getAll<RequestClient>('request-clients', page, pageSize, sortString);
         setFiles(response.data);
-        setTotalItems(response.meta.pagination.total);
+        setTotalItems(response.meta?.pagination?.total ?? 0);
+
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

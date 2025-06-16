@@ -96,7 +96,8 @@ export default function DocumentsPage() {
         const sortString = sortKey ? `${sortKey}:desc` : undefined;
         const response = await getAll<Document>('documents', page, pageSize, sortString);
         setDocuments(response.data);
-        setTotalItems(response.meta.pagination.total);
+        setTotalItems(response.meta?.pagination?.total ?? 0);
+
       } catch (error) {
         console.error('Error fetching documents:', error);
       } finally {
@@ -161,6 +162,7 @@ export default function DocumentsPage() {
     <ListLayout
       breadcrumbData={breadcrumbData}
       buttonLabel="Upload Document"
+      buttonDisabled={true}
       onButtonClick={() => router.push('/service/documents/add')}
     >
       <div className="p-0 rounded-lg shadow">

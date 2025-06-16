@@ -5,83 +5,53 @@ import DashboardLayout from './components/DashboardLayout';
 import {
   Grid,
   Column,
-  Tile,
+  // Tile,
   ClickableTile,
-  StructuredListWrapper,
-  StructuredListHead,
-  StructuredListRow,
-  StructuredListCell,
-  StructuredListBody,
+  // StructuredListWrapper,
+  // StructuredListHead,
+  // StructuredListRow,
+  // StructuredListCell,
+  // StructuredListBody,
 } from '@carbon/react';
 import {
   UserMultiple,
-  Image,
   Report,
   DocumentImport,
+  EmailNew 
 } from '@carbon/icons-react';
 
 export default function Home() {
   return (
     <DashboardLayout>
-      <div className="dashboard-page">
+      <div className="dashboard-page p-20">
         <h1 className="cds--type-productive-heading-05 dashboard-title">Dashboard Overview</h1>
         
-        {/* Statistics Grid */}
-        <Grid className="stats-grid">
-          <Column sm={4} md={4} lg={4}>
-            <Tile className="stats-tile">
-              <UserMultiple size={24} className="stats-icon" />
-              <div className="stats-content">
-                <p className="stats-number">1,234</p>
-                <p className="stats-label">Total Users</p>
-              </div>
-            </Tile>
-          </Column>
-          <Column sm={4} md={4} lg={4}>
-            <Tile className="stats-tile">
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              <Image size={24} className="stats-icon" />
-              <div className="stats-content">
-                <p className="stats-number">5,678</p>
-                <p className="stats-label">Total Photos</p>
-              </div>
-            </Tile>
-          </Column>
-          <Column sm={4} md={4} lg={4}>
-            <Tile className="stats-tile">
-              <Report size={24} className="stats-icon" />
-              <div className="stats-content">
-                <p className="stats-number">42</p>
-                <p className="stats-label">Pending Reports</p>
-              </div>
-            </Tile>
-          </Column>
-        </Grid>
-
-        
-
         {/* Quick Actions */}
         <h2 className="cds--type-productive-heading-03 section-title">Quick Actions</h2>
         <Grid className="actions-grid">
           <Column sm={4} md={4} lg={4}>
-            <ClickableTile href="/photos/pending" className="action-tile">
+            <ClickableTile href="/document/document-list" className="action-tile">
               <DocumentImport size={32} />
-              <h3>Review Pending Photos</h3>
-              <p>15 photos waiting for review</p>
+              <h3>Document List</h3>
             </ClickableTile>
           </Column>
           <Column sm={4} md={4} lg={4}>
-            <ClickableTile href="/users/new" className="action-tile">
+            <ClickableTile href="/service/client-requests" className="action-tile">
               <UserMultiple size={32} />
-              <h3>Manage Users</h3>
-              <p>View and manage user accounts</p>
+              <h3>Client Requests</h3>
             </ClickableTile>
           </Column>
           <Column sm={4} md={4} lg={4}>
-            <ClickableTile href="/reports" className="action-tile">
+            <ClickableTile href="/service/email-submissions" className="action-tile">
+              <EmailNew  size={32} />
+              <h3>Email Submissions</h3>
+            </ClickableTile>
+          </Column>
+          <Column sm={4} md={4} lg={4}>
+            <ClickableTile href="/service/deliverables" className="action-tile">
               <Report size={32} />
-              <h3>Handle Reports</h3>
-              <p>Review reported content</p>
+              <h3>
+Deliverables</h3>
             </ClickableTile>
           </Column>
         </Grid>
@@ -89,7 +59,7 @@ export default function Home() {
         
 
         {/* Recent Activity */}
-        <h2 className="cds--type-productive-heading-03 section-title">Recent Activity</h2>
+        {/* <h2 className="cds--type-productive-heading-03 section-title">Recent Activity</h2>
         <StructuredListWrapper>
           <StructuredListHead>
             <StructuredListRow head>
@@ -115,7 +85,7 @@ export default function Home() {
               <StructuredListCell>1 hour ago</StructuredListCell>
             </StructuredListRow>
           </StructuredListBody>
-        </StructuredListWrapper>
+        </StructuredListWrapper> */}
       </div>
     </DashboardLayout>
   );

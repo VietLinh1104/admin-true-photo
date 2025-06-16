@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, TextInput, TextArea } from '@carbon/react';
+import { Modal, TextInput } from '@carbon/react';
 import { formatDate, formatSize } from '@/app/utils/dateUtils';
 
 interface Document {
@@ -34,6 +34,7 @@ const MultiStepModal: React.FC<MultiStepModalProps> = ({
   primaryButtonText = 'Next',
   secondaryButtonText = 'Previous',
   onRequestSubmit,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   secondaryButtonDisable = false,
   onRequestSecondary,
   selectedDoc,

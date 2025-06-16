@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import PageLayout from '@/app/components/PageLayout';
 import { Tile, TextInput, ClickableTile, Button, Modal } from '@carbon/react';
-import { AddAlt, Information, UserFollow, Edit } from '@carbon/icons-react';
+import { AddAlt, Information, Edit } from '@carbon/icons-react';
 import { MultipartFileUploader } from '@/app/components/MultipartFileUploader2';
 import { useRouter, useParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
@@ -248,8 +248,8 @@ export default function DocumentPage() {
                     readOnly={['created_at', 'updated_at'].includes(h.key)}
                     value={
                       ['created_at', 'updated_at'].includes(h.key)
-                        ? formatDate((formState as any)[h.key])
-                        : String((formState as any)[h.key] ?? '')
+                        ? formatDate(formState[h.key as keyof Deliverable] as string)
+                        : String(formState[h.key as keyof Deliverable] ?? '')
                     }
                     onChange={(e) => {
                       const newValue = e.target.value;

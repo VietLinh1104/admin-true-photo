@@ -188,6 +188,7 @@ export function MultipartFileUploader({
             documentIdRef.current = generateUniqueFileName(file.name);
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { successful, failed } = await uppy.upload();
 
           if (failed.length > 0) {

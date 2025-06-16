@@ -65,8 +65,8 @@ const Navbar: React.FC = () => {
       </HeaderName>
       <HeaderNavigation aria-label="True Photo Admin">
         <HeaderMenuItem href="/">Dashboard</HeaderMenuItem>
-        <HeaderMenuItem href="/requests">Request List</HeaderMenuItem>
-        <HeaderMenuItem href="/settings">Settings</HeaderMenuItem>
+        <HeaderMenuItem href="/service/client-requests">Request List</HeaderMenuItem>
+        <HeaderMenuItem href="/">Settings</HeaderMenuItem>
       </HeaderNavigation>
       <HeaderGlobalBar>
         <HeaderGlobalAction aria-label="Search" onClick={() => {}}>

@@ -8,7 +8,6 @@ import { formatDate } from '@/app/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { Document } from '@carbon/icons-react';
 import { ClickableTile } from '@carbon/react';
-import { Add } from '@carbon/icons-react';
 import MultiStepModal from '@/app/components/MultiStepModal';
 
 interface User {
@@ -85,7 +84,8 @@ export default function EmailSubmissionsPage() {
           User: item.User,
         }));
         setFiles(mappedFiles);
-        setTotalItems(response.meta.pagination.total);
+        setTotalItems(response.meta?.pagination?.total ?? 0);
+
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

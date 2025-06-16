@@ -83,13 +83,14 @@ export const remove = async (
   return data;
 };
 
-// Đăng nhập
+import { User } from '@/app/types/models';
+
 export const login = async (
   username: string,
   password: string
-): Promise<ApiResponse<{ jwt: string; user: any }>> => {
+): Promise<ApiResponse<{ jwt: string; user: User }>> => {
   const url = `${API_URL}/auth/login`;
-  const { data } = await axios.post<ApiResponse<{ jwt: string; user: any }>>(
+  const { data } = await axios.post<ApiResponse<{ jwt: string; user: User }>>(
     url,
     { username, password },
     { headers: { 'Content-Type': 'application/json' } }
@@ -98,8 +99,10 @@ export const login = async (
   if (data.data.jwt) {
     localStorage.setItem('jwt', data.data.jwt);
   }
+
   return data;
 };
+
 
 export const deleteDocument = async (key: string): Promise<{ success: boolean; message: string }> => {
   const res = await fetch(`/api/multipart-upload/delete`, {

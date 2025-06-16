@@ -33,7 +33,7 @@ interface UploadData {
   status_upload: 'success' | 'error';
 }
 
-const Dataheaders = [
+const Dataheaders: { key: keyof RequestClient; header: string }[] = [
   { key: 'fullname', header: 'Full Name' },
   { key: 'email', header: 'Email' },
   { key: 'phone_number', header: 'Phone Number' },
@@ -44,12 +44,14 @@ const Dataheaders = [
   { key: 'processing_request_details', header: 'Processing Request Details' },
 ];
 
+
 export default function DocumentPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id;
   const [headers] = useState(Dataheaders);
   const [dataClient, setDataClient] = useState<RequestClient | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [openUpload, setOpenUpload] = useState(false);
@@ -201,11 +203,9 @@ export default function DocumentPage() {
                     id={h.key}
                     labelText={h.header}
                     value={
-                      h.key === 'size'
-                        ? formatSize(Number((dataClient as any)[h.key]))
-                        : ['created_at', 'updated_at', 'publishedAt'].includes(h.key)
-                        ? formatDate((dataClient as any)[h.key])
-                        : String((dataClient as any)[h.key] ?? '')
+                      ['created_at', 'updated_at'].includes(h.key)
+                        ? formatDate(dataClient?.[h.key] as string)
+                        : String(dataClient?.[h.key] ?? '')
                     }
                     readOnly
                     style={{
@@ -230,7 +230,7 @@ export default function DocumentPage() {
           <h1 className="text-base font-bold">Document List</h1>
           <Button
             kind="ghost"
-            disabled={true}
+            // disabled={true}
             renderIcon={AddAlt}
             iconDescription="Add document"
             onClick={() => setOpenUpload(true)}

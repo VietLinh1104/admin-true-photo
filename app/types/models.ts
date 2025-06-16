@@ -23,21 +23,36 @@ export interface User {
 
 export interface RequestClient {
   id_request_client: string;
-  id_user: string | null;
   fullname: string;
   email: string;
   phone_number: string;
   address: string;
-  processing_request_details: string;
-  request_status: string;
   created_at: string;
   updated_at: string;
+  request_status: string;
+  processing_request_details: string;
   Documents: Document[];
-  User: User | null;
 }
+
+
+export interface Meta {
+  total: number;
+  page: number;
+  limit: number;
+  pagination: Pagination;
+
+}
+
+export interface Pagination {
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  total: number;
+}
+
 
 export interface ApiResponse<T> {
   data: T;
   message?: string;
-  meta?: any;
+  meta?: Meta;
 }
