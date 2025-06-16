@@ -16,10 +16,9 @@ import { UserAvatar, Notification, Search, Logout } from '@carbon/icons-react';
 import { useRouter } from 'next/navigation';
 
 interface User {
-  id: number;
-  firstname: string;
-  lastname: string;
-  email: string;
+  id_user: string;
+  username: string;
+  role: string;
 }
 
 // Utility function to delete all cookies
@@ -39,30 +38,26 @@ const Navbar: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Check both localStorage and sessionStorage for user data
     const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (userStr) {
-      setUser(JSON.parse(userStr));
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (error) {
+        console.error('Failed to parse user:', error);
+      }
     }
   }, []);
 
   const handleLogout = () => {
-    // Clear all storage
     localStorage.clear();
     sessionStorage.clear();
-    
-    // Clear all cookies
     deleteAllCookies();
-    
-    // Redirect to login
     router.push('/login');
   };
 
   return (
     <Header aria-label="True Photo Admin">
-      <HeaderName href="/" prefix="Admin">
-        True Photo
-      </HeaderName>
+      <HeaderName href="/" prefix="Admin">True Photo</HeaderName>
       <HeaderNavigation aria-label="True Photo Admin">
         <HeaderMenuItem href="/">Dashboard</HeaderMenuItem>
         <HeaderMenuItem href="/service/client-requests">Request List</HeaderMenuItem>
@@ -86,9 +81,9 @@ const Navbar: React.FC = () => {
       <HeaderPanel aria-label="User Menu" expanded={isUserMenuOpen}>
         <Switcher aria-label="User Menu">
           {user && (
-            <div className="p-4 border-b border-gray-700">
-              <p className="font-semibold">{user.firstname} {user.lastname}</p>
-              <p className="text-sm text-gray-400">{user.email}</p>
+            <div className="p-4 w-full border-b border-gray-700">
+              <p className="font-semibold">👋 {user.username}</p>
+              <p className="text-sm text-gray-400 capitalize">Role: {user.role}</p>
             </div>
           )}
           <SwitcherItem aria-label="Logout" onClick={handleLogout}>
@@ -103,4 +98,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

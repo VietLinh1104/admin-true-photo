@@ -34,15 +34,6 @@ export interface RequestClient {
   Documents: Document[];
 }
 
-
-export interface Meta {
-  total: number;
-  page: number;
-  limit: number;
-  pagination: Pagination;
-
-}
-
 export interface Pagination {
   page: number;
   pageSize: number;
@@ -50,6 +41,12 @@ export interface Pagination {
   total: number;
 }
 
+export interface Meta {
+  total: number;
+  page: number;
+  limit: number;
+  pagination: Pagination;
+}
 
 export interface ApiResponse<T> {
   data: T;

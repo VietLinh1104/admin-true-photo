@@ -19,6 +19,13 @@ import { Document, RequestClient } from '@/app/types/models';
 import { getOne, deleteDocument, remove } from '@/lib/apiClient';
 import MultiStepModal from '@/app/components/MultiStepModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
+// import { getUserRole } from '@/app/utils/authUtils';
+
+interface User {
+  id_user: string;
+  username: string;
+  role: string;
+}
 
 interface UploadData {
   id_document?: string;
@@ -60,6 +67,25 @@ export default function DocumentPage() {
   const [openConfirmDeleteRequest, setOpenConfirmDeleteRequest] = useState(false);
   const [canUpload, setCanUpload] = useState(false);
   const triggerUploadRef = useRef<(() => Promise<UploadData>) | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+
+  useEffect(() => {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (userStr) {
+        try {
+          setUser(JSON.parse(userStr));
+        } catch (error) {
+          console.error('Failed to parse user:', error);
+        }
+      }
+  }, []);
+
+  // console.log(user?.role)
+
+  const isAdmin = user?.role === 'admin';
+  const isEmployee = user?.role === 'employee';
+  
 
   const breadcrumbData = [
     { label: 'Home', href: '/' },
@@ -71,6 +97,7 @@ export default function DocumentPage() {
       isCurrentPage: true,
     },
   ];
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -188,6 +215,7 @@ export default function DocumentPage() {
           itemText: 'Delete Request',
           onClick: () => setOpenConfirmDeleteRequest(true),
           isDelete: true,
+          disabled: isEmployee, 
         },
       ]}
     >
@@ -230,7 +258,7 @@ export default function DocumentPage() {
           <h1 className="text-base font-bold">Document List</h1>
           <Button
             kind="ghost"
-            // disabled={true}
+            disabled={isEmployee}
             renderIcon={AddAlt}
             iconDescription="Add document"
             onClick={() => setOpenUpload(true)}
@@ -287,11 +315,8 @@ export default function DocumentPage() {
           steps={[{ label: 'Document Details' }]}
           currentStep={0}
           modalHeading="Document Details"
-          secondaryButtonText="Close"
-
-          
-          // onRequestSecondary={() => setOpenConfirmDelete(true)}
-          onRequestSecondary={() => setOpenDetail(false)}
+          secondaryButtonText={isAdmin ? 'Delete' : 'Close'}
+          onRequestSecondary={isAdmin ? () => setOpenConfirmDelete(true) : () => setOpenDetail(false)}
           primaryButtonText="Download"
           onRequestSubmit={() => selectedFile && window.open(selectedFile.document_url, '_blank')}
           selectedDoc={selectedFile as unknown as Record<string, string | number | null | undefined>}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
   TextInput,
   Button,
@@ -21,7 +21,15 @@ function LoginContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get('from') || '/requests';
+  const from = searchParams.get('from') || '/';
+
+  // 👇 Redirect nếu token đã tồn tại
+  useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      router.push('/');
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,20 +38,14 @@ function LoginContent() {
 
     try {
       const response = await login(identifier, password);
-      
+
       if (response.token && response.user) {
-        // Choose storage based on remember me preference
+        const { id_user, username, role } = response.user;
         const storage = rememberMe ? localStorage : sessionStorage;
-        
-        // Store the JWT token
+
         storage.setItem('token', response.token);
-        // Store user data
-        storage.setItem('user', JSON.stringify(response.user));
-        
-        // Set a cookie to indicate token presence (for middleware)
+        storage.setItem('user', JSON.stringify({ id_user, username, role }));
         document.cookie = 'hasToken=true; path=/';
-        
-        // Redirect to the original requested page or dashboard
         router.push(from);
       } else {
         setErrorMessage('Invalid login response');
@@ -77,25 +79,22 @@ function LoginContent() {
               labelText="Identifier"
               type="text"
               value={identifier}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
             />
-
             <PasswordInput
               id="password"
               labelText="Password"
               value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
-
             <Checkbox
               id="remember-me"
               labelText="Remember me"
               checked={rememberMe}
               onChange={(_, { checked }) => setRememberMe(checked)}
             />
-
             <Button
               type="submit"
               renderIcon={LoginIcon}
@@ -106,10 +105,14 @@ function LoginContent() {
             </Button>
           </Stack>
         </Form>
-
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-400">
-          </p>
+          <span className="text-sm text-gray-400">
+            Don&#39;t have an account?{' '}
+            <a href="/register" className="text-blue-500 hover:underline">
+              Register now
+            </a>
+          </span>
+
         </div>
       </div>
     </div>
@@ -122,4 +125,4 @@ export default function LoginPage() {
       <LoginContent />
     </Suspense>
   );
-} 
+}

@@ -1,12 +1,11 @@
 import axios from 'axios';
-import { ApiResponse } from '@/app/types/models';
+import { ApiResponse, User } from '@/app/types/models';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API}/api`;
 
-// Hàm lấy token và tạo header Authorization
 const getAuthToken = (): string | null =>
   typeof window !== 'undefined'
-    ? localStorage.getItem('jwt') || sessionStorage.getItem('jwt') || null
+    ? localStorage.getItem('token') || sessionStorage.getItem('token') || null
     : null;
 
 const getAuthHeaders = () => {
@@ -17,7 +16,6 @@ const getAuthHeaders = () => {
   };
 };
 
-// GET toàn bộ bản ghi
 export const getAll = async <T>(
   collection: string,
   page = 1,
@@ -26,15 +24,12 @@ export const getAll = async <T>(
 ): Promise<ApiResponse<T[]>> => {
   let url = `${API_URL}/${collection}?pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
   if (sort) url += `&sort=${encodeURIComponent(sort)}`;
-
   const { data } = await axios.get<ApiResponse<T[]>>(url, {
     headers: getAuthHeaders(),
   });
-
   return data;
 };
 
-// GET bản ghi theo ID
 export const getOne = async <T>(
   collection: string,
   id: number | string
@@ -46,7 +41,6 @@ export const getOne = async <T>(
   return data;
 };
 
-// POST tạo bản ghi
 export const create = async <T, P = Partial<T>>(
   collection: string,
   payload: P
@@ -58,7 +52,6 @@ export const create = async <T, P = Partial<T>>(
   return data;
 };
 
-// PUT cập nhật bản ghi
 export const update = async <T>(
   collection: string,
   id: number | string,
@@ -71,7 +64,6 @@ export const update = async <T>(
   return data;
 };
 
-// DELETE xóa bản ghi
 export const remove = async (
   collection: string,
   id: number | string
@@ -83,26 +75,31 @@ export const remove = async (
   return data;
 };
 
-import { User } from '@/app/types/models';
-
 export const login = async (
   username: string,
   password: string
-): Promise<ApiResponse<{ jwt: string; user: User }>> => {
+): Promise<ApiResponse<{ token: string; user: User }>> => {
   const url = `${API_URL}/auth/login`;
-  const { data } = await axios.post<ApiResponse<{ jwt: string; user: User }>>(
+  const { data } = await axios.post<ApiResponse<{ token: string; user: User }>>(
     url,
     { username, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
-
-  if (data.data.jwt) {
-    localStorage.setItem('jwt', data.data.jwt);
-  }
-
   return data;
 };
 
+export const register = async (
+  username: string,
+  password: string
+): Promise<ApiResponse<{ token: string; user: User }>> => {
+  const url = `${API_URL}/auth/register`;
+  const { data } = await axios.post<ApiResponse<{ token: string; user: User }>>(
+    url,
+    { username, password },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return data;
+};
 
 export const deleteDocument = async (key: string): Promise<{ success: boolean; message: string }> => {
   const res = await fetch(`/api/multipart-upload/delete`, {

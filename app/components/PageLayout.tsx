@@ -23,6 +23,7 @@ interface MenuItem {
   itemText: string;
   onClick: () => void;
   isDelete?: boolean;
+  disabled?: boolean;
 }
 
 interface PageLayoutProps {
@@ -83,6 +84,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                     itemText={item.itemText}
                     onClick={item.onClick}
                     isDelete={item.isDelete}
+                    disabled={item.disabled} 
                   />
                 ))}
               </OverflowMenu>
