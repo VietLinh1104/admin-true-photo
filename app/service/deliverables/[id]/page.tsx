@@ -48,6 +48,7 @@ interface Deliverable {
 }
 
 const Dataheaders = [
+  { key: 'id_deliverables_document', header: 'Deliverable ID' }, // <-- thêm dòng này
   { key: 'customer_name', header: 'Customer Name' },
   { key: 'client_email', header: 'Customer Email' },
   { key: 'created_at', header: 'Created At' },
@@ -266,11 +267,32 @@ export default function DocumentPage() {
                       borderBottom: '1px solid #494A4C',
                       width: '100%',
                     }}
+                    
                   />
+                  
                 ))
               ) : (
                 <p className="text-gray-500">No data available</p>
               )}
+
+              {/* ✅ Link download dựa trên id_deliverables_document */}
+               {/* ✅ Thêm input chứa link download */}
+              <TextInput
+                id="download_link"
+                labelText="Download Link"
+                readOnly
+                value={`${process.env.NEXT_PUBLIC_PAGE_URL || 'http://localhost:3000'}/download/${formState.id_deliverables_document || ''}`}
+                style={{
+                  marginBottom: 16,
+                  backgroundColor: '#393939',
+                  border: 'none',
+                  borderBottom: '1px solid #494A4C',
+                  width: '100%',
+                  cursor: 'pointer',
+                  color: '#78a9ff',
+                  textDecoration: 'underline',
+                }}
+              />
             </div>
           </div>
         </div>

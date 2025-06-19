@@ -105,15 +105,6 @@ function LoginContent() {
             </Button>
           </Stack>
         </Form>
-        <div className="mt-6 text-center">
-          <span className="text-sm text-gray-400">
-            Don&#39;t have an account?{' '}
-            <a href="/register" className="text-blue-500 hover:underline">
-              Register now
-            </a>
-          </span>
-
-        </div>
       </div>
     </div>
   );
