@@ -11,22 +11,22 @@ import {
 } from '@carbon/react';
 import { Login as LoginIcon } from '@carbon/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { login } from '@/lib/strapiClient';
+import { login } from '@/lib/strapiClient'; // ⬅ Đảm bảo login() trả về { token, user }
 
 function LoginContent() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const from = searchParams.get('from') || '/';
 
-  // 👇 Redirect nếu token đã tồn tại
   useEffect(() => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (token) {
+    const cookies = document.cookie;
+    if (cookies.includes('hasToken=true')) {
       router.push('/');
     }
   }, [router]);
@@ -37,22 +37,27 @@ function LoginContent() {
     setErrorMessage('');
 
     try {
-      const response = await login(identifier, password);
+      const res = await login(identifier, password);
 
-      if (response.token && response.user) {
-        const { id_user, username, role } = response.user;
+      if (res.token && res.user) {
+        const { id_user, username, role } = res.user;
         const storage = rememberMe ? localStorage : sessionStorage;
 
-        storage.setItem('token', response.token);
+        // Lưu user info UI
         storage.setItem('user', JSON.stringify({ id_user, username, role }));
-        document.cookie = 'hasToken=true; path=/';
+
+        // Lưu token vào cookie (giả lập HttpOnly tạm thời)
+        const maxAge = rememberMe ? 60 * 60 * 24 * 30 : null;
+        document.cookie = `token=${res.token}; path=/; ${maxAge ? `max-age=${maxAge}` : ''}`;
+        document.cookie = `hasToken=true; path=/; ${maxAge ? `max-age=${maxAge}` : ''}`;
+
         router.push(from);
       } else {
         setErrorMessage('Invalid login response');
       }
-    } catch (error) {
-      console.error('Login failed:', error);
-      setErrorMessage('An error occurred during login');
+    } catch (err) {
+      console.error('Login error:', err);
+      setErrorMessage('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

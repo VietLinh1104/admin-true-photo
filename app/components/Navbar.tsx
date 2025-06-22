@@ -21,7 +21,6 @@ interface User {
   role: string;
 }
 
-// Utility function to delete all cookies
 const deleteAllCookies = () => {
   const cookies = document.cookie.split(';');
   for (let i = 0; i < cookies.length; i++) {
@@ -99,3 +98,12 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
+
+{/* <Button
+              type="submit"
+              renderIcon={LoginIcon}
+              disabled={isLoading}
+              size="lg"
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button> */}

@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import {
   DataTable,
@@ -13,7 +15,7 @@ import {
   OverflowMenuItem,
   Tag,
 } from '@carbon/react';
-import {TrashCan, Edit, OverflowMenuVertical } from '@carbon/react/icons';
+import { TrashCan, Edit, OverflowMenuVertical, Document } from '@carbon/react/icons';
 
 interface Column {
   header: string;
@@ -54,7 +56,7 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
   onEdit,
   onDelete,
   pageSize = 10,
-  totalItems,
+  totalItems = 0,
   onPageChange,
   page = 1,
   sortKey,
@@ -69,10 +71,10 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
   return (
     <div className="data-table-container">
       {loading ? (
-        <DataTableSkeleton 
+        <DataTableSkeleton
           className="bg-black !p-0"
-          rowCount={2} 
-          columnCount={7} 
+          rowCount={2}
+          columnCount={headers.length + (onEdit || onDelete ? 1 : 0)}
           showHeader={false}
           showToolbar={false}
         />
@@ -103,78 +105,110 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
                             style={{ cursor: 'pointer' }}
                           >
                             {header.header}
-                            {sortKey === header.key && (
-                              sortDirection === 'ASC' ? ' ▲' : ' ▼'
-                            )}
+                            {sortKey === header.key &&
+                              (sortDirection === 'ASC' ? ' ▲' : ' ▼')}
                           </TableHeader>
                         );
                       })}
-                      {(onEdit || onDelete) && (
-                        <TableHeader>Actions</TableHeader>
-                      )}
+                      {(onEdit || onDelete) && <TableHeader>Actions</TableHeader>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {rows.map((row, rowIndex) => {
-                      const rowProps = getRowProps({ row });
-                      const { key: rowKey, ...restRowProps } = rowProps;
-                      return (
-                        <TableRow
-                          key={rowKey || `row-${rowIndex}`}
-                          {...restRowProps}
-                          onClick={() => onRowClick && onRowClick(row)}
-                          style={{ cursor: onRowClick ? 'pointer' : undefined }}
+                    {rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={headers.length + (onEdit || onDelete ? 1 : 0)}
                         >
-                          {row.cells.map((cell, cellIndex) => (
-                            <TableCell key={cell.id || `cell-${rowIndex}-${cellIndex}`}>
-                              {cell.info && cell.info.header === 'mimeType' ? (
-                                <Tag type="blue">{cell.value}</Tag>
-                              ) : cell.info && cell.info.header === 'statusUpload' ? (
-                                (() => {
-                                  let tagType: 'gray' | 'green' | 'red' | 'blue' | 'warm-gray' | 'magenta' | 'purple' | 'cyan' | 'teal' | 'cool-gray' | 'high-contrast' | 'outline' = 'gray';
-                                  if (cell.value === 'success') tagType = 'green';
-                                  else if (cell.value === 'error') tagType = 'red';
-                                  else if (cell.value === 'pending') tagType = 'warm-gray';
-                                  return <Tag type={tagType}>{cell.value}</Tag>;
-                                })()
-                              ) : (
-                                cell.value
-                              )}
-                            </TableCell>
-                          ))}
-                          {(onEdit || onDelete) && (
-                            <TableCell>
-                              <OverflowMenu
-                                flipped
-                                renderIcon={OverflowMenuVertical}
-                                ariaLabel="Actions"
+                          <div
+                            style={{
+                              textAlign: 'center',
+                              padding: '2rem',
+                              color: '#999',
+                            }}
+                          >
+                            <Document size={32} />
+                            <p style={{ marginTop: 12 }}>
+                              No documents to display.
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      rows.map((row, rowIndex) => {
+                        const rowProps = getRowProps({ row });
+                        const { key: rowKey, ...restRowProps } = rowProps;
+                        return (
+                          <TableRow
+                            key={rowKey || `row-${rowIndex}`}
+                            {...restRowProps}
+                            onClick={() => onRowClick && onRowClick(row)}
+                            style={{ cursor: onRowClick ? 'pointer' : undefined }}
+                          >
+                            {row.cells.map((cell, cellIndex) => (
+                              <TableCell
+                                key={cell.id || `cell-${rowIndex}-${cellIndex}`}
                               >
-                                {onEdit && (
-                                  <OverflowMenuItem
-                                    itemText="Edit"
-                                    onClick={() => onEdit(row)}
-                                  >
-                                    <Edit size={16} />
-                                  </OverflowMenuItem>
+                                {cell.info && cell.info.header === 'mimeType' ? (
+                                  <Tag type="blue">{cell.value}</Tag>
+                                ) : cell.info && cell.info.header === 'statusUpload' ? (
+                                  (() => {
+                                    let tagType:
+                                      | 'gray'
+                                      | 'green'
+                                      | 'red'
+                                      | 'blue'
+                                      | 'warm-gray'
+                                      | 'magenta'
+                                      | 'purple'
+                                      | 'cyan'
+                                      | 'teal'
+                                      | 'cool-gray'
+                                      | 'high-contrast'
+                                      | 'outline' = 'gray';
+                                    if (cell.value === 'success') tagType = 'green';
+                                    else if (cell.value === 'error') tagType = 'red';
+                                    else if (cell.value === 'pending') tagType = 'warm-gray';
+                                    return <Tag type={tagType}>{cell.value}</Tag>;
+                                  })()
+                                ) : (
+                                  cell.value
                                 )}
-                                {onDelete && (
-                                  <OverflowMenuItem
-                                    itemText="Delete"
-                                    onClick={() => onDelete(row)}
-                                    isDelete
-                                  >
-                                    <TrashCan size={16} />
-                                  </OverflowMenuItem>
-                                )}
-                              </OverflowMenu>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    })}
+                              </TableCell>
+                            ))}
+                            {(onEdit || onDelete) && (
+                              <TableCell>
+                                <OverflowMenu
+                                  flipped
+                                  renderIcon={OverflowMenuVertical}
+                                  ariaLabel="Actions"
+                                >
+                                  {onEdit && (
+                                    <OverflowMenuItem
+                                      itemText="Edit"
+                                      onClick={() => onEdit(row)}
+                                    >
+                                      <Edit size={16} />
+                                    </OverflowMenuItem>
+                                  )}
+                                  {onDelete && (
+                                    <OverflowMenuItem
+                                      itemText="Delete"
+                                      onClick={() => onDelete(row)}
+                                      isDelete
+                                    >
+                                      <TrashCan size={16} />
+                                    </OverflowMenuItem>
+                                  )}
+                                </OverflowMenu>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
-                {totalItems && (
+                {totalItems > 0 ? (
                   <Pagination
                     page={page}
                     pageSize={pageSize}
@@ -183,7 +217,7 @@ export const CustomDataTable: React.FC<DataTableProps> = ({
                     onChange={handlePageChange}
                     size="md"
                   />
-                )}
+                ) : null}
               </div>
             );
           }}
