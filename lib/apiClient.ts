@@ -3,10 +3,12 @@ import { ApiResponse, User } from '@/app/types/models';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API}/api`;
 
-const getAuthToken = (): string | null =>
-  typeof window !== 'undefined'
-    ? localStorage.getItem('token') || sessionStorage.getItem('token') || null
-    : null;
+export const getAuthToken = (): string | null => {
+  if (typeof document === 'undefined') return null;
+
+  const match = document.cookie.match(/(^| )token=([^;]+)/);
+  return match ? match[2] : null;
+};
 
 const getAuthHeaders = () => {
   const token = getAuthToken();
